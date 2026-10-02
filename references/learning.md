@@ -35,6 +35,9 @@ Entries are grouped by the reference file they belong to (`## references/<file>.
 - Marker first, the same as in the reference files: no marker = verified in the packaged game, **[source]** = read from code or docs, **[?]** = uncertain.
 - The trailing parentheses carry the date and the versions the finding was made on. Without versions a finding cannot be trusted after the next game update.
 - When a later test changes an entry's status, edit the entry in place. Do not add a second entry about the same thing.
+- **Facts reported by the user** count as verified when they come with evidence from the packaged game (a log line, a file name, a reproducible step). A cause you inferred from them but did not check gets its own sentence marked **[?]**.
+- **Unknown versions:** write `versions unknown` instead of guessing, or ask the user if it is a quick question. Do not copy the skill's baseline versions into an entry.
+- **Correction or new entry?** A correction is for a statement that is wrong in general (a wrong path, a renamed class, a step that no longer works). A number that depends on hardware or setup (build times, memory) and differs from the skill is a new measurement entry with the conditions it was taken in. A statement that is right but incomplete gets a new entry, too.
 
 ## 3. When to ask the user
 
@@ -49,7 +52,9 @@ Ask with one question offering:
 2. **Fold and send a pull request**: the same, plus a pull request to the upstream repository (section 5).
 3. **Not now**: entries stay in the inbox and the question comes back at the next threshold.
 
-Give a short summary with the question: how many entries, to which files, and the most important one. Do not ask in the middle of a task, and do not ask again in the same session after "not now".
+Give a short summary with the question: how many entries, to which files, and the most important one. Do not ask in the middle of a task.
+
+After the answer, write one line at the top of `learned/findings.md`, under the title: `Last asked: <date>, <number of entries>, answer: <fold / pull request / not now>`. After "not now", ask again only when at least 5 new entries have come in since that line, or a new correction or crash-prevention entry has appeared. Never ask twice in the same session.
 
 ## 4. Folding findings into the skill
 
