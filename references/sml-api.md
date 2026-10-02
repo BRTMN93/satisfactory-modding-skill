@@ -177,6 +177,14 @@ if (auto* P = Cast<UConfigPropertyFloat>(Root->SectionProperties.FindRef(TEXT("S
 - Registration through `ModSubsystems` or `USubsystemActorManager::RegisterSubsystemActor`.
 - Getting it: `World->GetSubsystem<USubsystemActorManager>()->GetSubsystemActor<T>()`. Returns null until the actor is created or arrives through replication.
 
+**Keeping a subsystem's data in the save**
+- `AModSubsystem` and `AFGSubsystem` do not implement `IFGSaveInterface`. Add it yourself: `class AMySubsystem : public AModSubsystem, public IFGSaveInterface`, override `ShouldSave_Implementation() const`, and mark the fields `UPROPERTY(SaveGame)`. The interface's other native events have empty defaults in the generated header, so override only what you need.
+- SML spawns the subsystem with the fixed name `<ModReference>_<ClassName>` and first looks for an actor with that name loaded from the save (`USubsystemActorManager::SpawnSubsystemActor`). The saved actor with its data is reused instead of a fresh one.
+- Round-tripped exactly through three save/load cycles: `int32`, `double` (bit-exact), `FString` with non-ASCII characters and quotes, `TMap<FString, FString>`, and `TMap<FString, TObjectPtr<AActor>>` holding a train station identifier, a station building, an `AFGTrain` and block signals. After each load every reference pointed to the same live object that `AFGRailroadSubsystem` and `AFGBuildableSubsystem` return.
+- Order on a save load: `PostLoadGame` fires **before** `Init()`, both in frame 0 (measured 13.058 s and 13.163 s), so the `SaveGame` fields already hold the saved values inside `Init()`. On a save without the subsystem's data, or in a new game, `PostLoadGame` is not called and `Init()` sees the defaults.
+- `PreSaveGame` fires on every save, also on saves made from code, while `ShouldSave` returns true. With `return DataVersion != 0;` an empty subsystem stays out of the save entirely (no `PreSaveGame` call). Do that in a mod players may install without using: a game saved with the mod installed then carries no trace of it.
+- What a save without the mod does to this data: see "Saves" in `game-classes.md`.
+
 ### 6.3 Networking: client ↔ server RPC (Remote Call Object)
 - `UFGRemoteCallObject` with `Within=FGPlayerController`, one per player.
 - Functions: `UFUNCTION(Server, Reliable)` from client to server and `UFUNCTION(Client, Reliable)` from the server to that one client.
@@ -215,7 +223,7 @@ protected: UPROPERTY(Replicated) bool bDummy = true;
 - `UModLoadingLibrary`: `IsModLoaded`, `GetLoadedMods()` returns `TArray<FModInfo>{Name, Version}` (good as part of a cache key), `GetModLoaderVersion`.
 - `UBlueprintAssetHelperLibrary::FindPluginNameByObjectPath`: which mod a given asset belongs to.
 - `FReflectionHelper::GetPropertyValue`, `SetPropertyValue`, `CallScriptFunction`: access any property by name. Alternative in plain UE: `FindPropertyByName` + `ContainerPtrToValuePtr` and `CallFunctionByNameWithArguments`.
-- Saving your own objects in the save: `IFGSaveInterface` + `UPROPERTY(SaveGame)`. Mod metadata: `UFGSaveSession::SetModMetadata` and `GetModMetadata` [source].
+- Saving your own objects in the save: `IFGSaveInterface` + `UPROPERTY(SaveGame)`, tested on a subsystem (section 6.2). Mod metadata: `UFGSaveSession::SetModMetadata` and `GetModMetadata` [source].
 - SML console variables:
   - `SML.SkipModCompatibilityCheck`
   - `SML.ForceAllowCheats`

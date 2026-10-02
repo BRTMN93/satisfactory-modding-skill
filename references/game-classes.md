@@ -19,6 +19,9 @@ This is the most important thing to remember.
 
 ### Saves
 - `UFGSaveSession::Get(World)`: `SaveGame`, `LoadGame`.
+- **Saving from code:** `UFGSaveSession::Get(World)->SaveGame(Name, FOnSaveGameComplete::CreateLambda([](bool bSaved, const FText& Error, void*) {...}), nullptr)`. The name is the file name without `.sav`. The file lands in the same `SaveGames\<SteamID64>` folder and keeps the session name of the loaded save. The callback came in the same frame as the call, about 90 ms later, with `bSaved = true`.
+- Every save logs `LogSave: Warning: New/Old Root size mismatch!`, also a plain manual save in a game where no mod saves anything. It can be ignored.
+- **A save loaded without the mod that wrote data into it loads without a fatal error, and the next save drops that data.** On load the game logs `LogUObjectGlobals: Warning: Failed to find object 'Class /Script/<Mod>.<Class>'`, `LogSave: Warning: Got object [...PersistentLevel.<Mod>_<Class>] of deleted class [...]` and an `Unknown Classes` list, and still ends with `NO LOAD ERRORS FOUND`. SML logs `<N> missing mods found: <Mod> (<Mod>) is missing` when the save list is shown. A save made in that session no longer contains the object. Loaded again with the mod, the subsystem is spawned fresh with default values. So one save without the mod loses everything the mod kept in the save.
 - Location: `%LOCALAPPDATA%\FactoryGame\Saved\SaveGames\<SteamID64>\*.sav`. The same directory holds `blueprints\` and `ServerManager_V2.sav`.
 - Autosaves cycle through three slots: `<session>_autosave_0..2`.
 - A large factory is about 8 MB of file, because the save is compressed.
@@ -40,7 +43,8 @@ This is the most important thing to remember.
 ### What changes between save and load
 - Lightweight building transforms are bit-identical.
 - Some actors (pipe junctions, pumps, flow indicators) get rotations recomputed with a drift of about 1e-10.
-- Some actors get new names.
+- Some actors get new names. Stations, trains and signals do not: `FGTrainStationIdentifier_<n>`, `Build_TrainStation_C_<n>`, `BP_Train_C_<n>` and `Build_RailroadBlockSignal_C_<n>` kept the same path name (`/Game/FactoryGame/Map/GameLevel01/Persistent_Level.Persistent_Level:PersistentLevel.<name>`) through four save/load cycles. A saved hard reference and the path name both identify them. Signals have no player-visible name. A position in a list sorted by name is no identity: after one signal was dismantled, the others moved down one place.
+- **A reference to a dismantled object.** After `IFGDismantleInterface::Execute_Dismantle(Actor)` on a block signal, the `UPROPERTY` pointer is set and `IsValid` is true in the same frame. One second later the pointer is still set but `IsValid` is false. After `CollectGarbage` the pointer stored as a `TMap` value is null and the map key stays. Saved and loaded again, the key is still there with a null value. Test references with `IsValid`, not only for null.
 - Other mods spawn helper buildings with a delay. Example: `EmptyActor_C` appeared about 2.5 s after load, at the player's location.
 - Takeaway: compute data fingerprints only from what you use, rounded, and after data collection has finished.
 
