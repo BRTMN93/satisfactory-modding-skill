@@ -50,6 +50,9 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 **AccessTransformers** (`Config/AccessTransformers.ini`, section `[AccessTransformers]`) give access to private and protected members of the game:
 - `Friend=(Class="AFoo", FriendClass="UBar")`
 - `Accessor=(Class="AFoo", Property="mX")`: generates `GetmX()` and `SetmX()`.
+  - Tested with `Accessor=(Class="AFGBuildableTrainPlatformCargo", Property="mFreightCargoType")`: `Class` takes the name with its `A`/`U` prefix, and the getter is a member, called as `Platform->GetmFreightCargoType()`.
+  - Adding the line did not force a rebuild of the game module: the next Alpakit packaging took 166 s, about as long as one without the change.
+  - For a `UPROPERTY` field that only needs reading, reflection works without AccessTransformers: `FindFProperty<FEnumProperty>(Class, TEXT("mX"))->ContainerPtrToValuePtr<void>(Object)`.
 - Editor only: `BlueprintReadWrite=(Class="/Script/FactoryGame.FGSchematic", Property="mUnlocks")`, `BlueprintCallable=(...)`, `BlueprintType=(Struct)`.
 
 **Other config files**
