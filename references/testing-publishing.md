@@ -13,6 +13,12 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Automation: a separate test mod enabled by a launch parameter (e.g. `-MyModTestBridge`) reads commands from a file (`commands.jsonl`), loads saves, builds and dismantles buildings, samples frame times and memory, and writes the results to files. I picked this pattern up from another modder.
 - Check rendering changes by comparing images pixel by pixel (old and new build, same save).
 
+**Launching the game for tests**
+- **[source]** Starting the game straight into a save, according to docs.ficsit.app (Development → Testing):
+  `-ini:Engine:[/Script/EngineSettings.GameMapsSettings]:GameDefaultMap=/Game/FactoryGame/Map/GameLevel01/Persistent_Level.Persistent_Level,[/Script/EngineSettings.GameMapsSettings]:LocalMapOptions=?skipOnboarding?listen?loadgame=<save name without path and extension>`.
+- The documentation also gives a ready-made PowerShell script for launching the game (with, among others, the parameters `-loadLatestSave` and `-multiplayer`) and the parameters `-EpicPortal`, `-NoSteamClient`, `-log`, `-NewConsole`, `-nosplash`, `-windowed`, `-WaitForDebugger`. The syntax comes from a summary of the page, so it must be confirmed against the source. **[?]** Not tested yet.
+- **[source]** Testing with two clients locally: the host sets the session type to `IP`, the client types `open 127.0.0.1` in the console. Dedicated server locally: `FactoryServer.exe -log -EpicPortal -NoSteamClient`. Source as above (docs.ficsit.app, Development → Testing).
+
 **Pre-release checklist**
 - [ ] Package all the targets you release (Steam, EGS, Win/Linux servers).
 - [ ] Small and large save; new game.
@@ -25,6 +31,13 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 ## 18. Publishing, ficsit.app, licenses, working with someone else's mod
 
 ### ficsit.app (SMR)
+- **Before designing a mod, search ficsit.app through the API, not with a web search engine.** The web search engine did not find any of the existing railway mods, including a mod with 60 thousand downloads. The API found them at once. Search with several words from the domain (for example: train, station, logistic, dispatch).
+- Search through the API. Several queries at once are separated by aliases (`a:`, `b:`):
+  ```bash
+  curl -s https://api.ficsit.app/v2/query -H "Content-Type: application/json" \
+    -d '{"query":"{ a: getMods(filter: {search: \"train\", limit: 40, order_by: downloads, order: desc}) { mods { name mod_reference short_description downloads } } }"}'
+  ```
+- A `getModByReference` that returns `null` means the mod reference is free.
 - The mod owner publishes releases.
 - Each game branch (EA/EXP) has a compatibility state flag (e.g. `Works`, `Damaged`, `Broken`) and a note. The owner or the SMR moderators set it.
 - Check a mod's state through the API:

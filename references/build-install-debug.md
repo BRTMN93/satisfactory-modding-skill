@@ -23,6 +23,9 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 - Success: `Result: Succeeded`, `BUILD SUCCESSFUL`, `AutomationTool exiting with ExitCode=0`.
 - Compile error: `Result: Failed (OtherCompilationError)`, `BUILD FAILED`, ExitCode=6.
 - Error details: `%APPDATA%\Unreal Engine\AutomationTool\Logs\<engine path>\UBA-FactoryGameSteam-Win64-Shipping.txt`.
+- Warnings that appear with a correct game feature mod (also with `ExampleMod`):
+  - during the cook and in the game: `LogAssetManager: Warning: Invalid Primary Asset Type FGGameFeatureData:<Mod>: ChangeBundleStateForPrimaryAssets failed to find NameData`,
+  - in the game: `LogPluginManager: Warning: Cannot mount plugin localization for '<Mod>' as the plugin isn't explicitly loaded`.
 - To follow the log, use the expression `error C[0-9]+|error LNK|fatal error|Result: (Succeeded|Failed)|BUILD (SUCCESSFUL|FAILED)`. First filter out the huge `[Adaptive Build] Excluded from … unity file` lines.
 
 **Packaging output:** `<Project>\Saved\ArchivedPlugins\<Mod>\<Mod>.zip`. Inside is a `Windows\` directory containing:
@@ -84,8 +87,13 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - `LogGame: World Serialization (save|load): N seconds`
 - `LogPakFile: Mounted Pak file ...`
 
+**Did the mod add errors?** The fastest check is to compare the set of errors with the previous log.
+- A game with only SML has constant errors in the log unrelated to mods (DLSS `kFeatureDLSS_G`, `t.MaxFPS`, Niagara, MVVM in `BPW_JoinGame`, `Array_Sort` in SML's `Widget_SessionSettings`).
+- Method: `grep -E "Fatal|: Error:"` in both logs, strip the timestamps (`sed -E 's/^\[[^]]*\]\[[^]]*\]//'`), `sort -u` and `diff`. Observed: the set was identical to the one from the `ExampleMod` log.
+
 **Logging in the mod**
 - Own category: `DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Display, All)`.
+- One category for several modules: `DECLARE_LOG_CATEGORY_EXTERN` with the export macro of the lowest module (`MYMODCORE_API DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Log, All);`) in its public header, and `DEFINE_LOG_CATEGORY` in its `.cpp` file. The other modules depend on that module and use the same category.
 - Macros that append `__LINE__`.
 - Debug logs behind a `constexpr bool`, enabled by a rebuild. One run with full logging produced a 49 MB log.
 - Measure the phases of work: `FPlatformTime::Seconds()` at the start and a log like "X done in %.2f s, %d items" at the end.

@@ -65,3 +65,8 @@ ENQUEUE_RENDER_COMMAND(MyEndDraw)([Res](FRHICommandListImmediate& RHICmdList) {
 **Injecting UI into game widgets from C++**
 - `Cast<UWidgetBlueprintGeneratedClass>(Cls)->GetWidgetTreeArchetype()`, `FindWidget("...")`, `InsertChildAt`, `ConstructWidget`, copy the `UCanvasPanelSlot` layout.
 - Guards: `RequiresCookedData()`, `FPlatformProperties::IsServerOnly()`, `FApp::CanEverRender()`, `IsNetMode(NM_Client)`.
+
+**Game railway widgets** (variable names extracted from `.uasset` stubs in the starter project, headers 491125, game 502094)
+- **[source]** `Content/FactoryGame/Buildable/Factory/Train/Signal/Widget_RailroadSignal`: the signal's interaction window (a child of `FGInteractWidget`). Variables: `mSignal`, `mTopSignal`, `mBottomSignal`, `mCurrentStateLabel`, `mDescriptionText`. So signals have their own menu that can be extended.
+- **[source]** `Content/FactoryGame/Buildable/Factory/Train/Station/Widget_TrainStationNew`: the railway window with tabs. Variables: `mTabs` (`Widget_SlidingTabs`), `mTrainList`, `mStationList`, `mLocomotiveMenuContainer`.
+- **[source]** `Content/FactoryGame/Buildable/Vehicle/Train/Locomotive/UI/Widget_Locomotive_Menu`: the train window with the timetable editor. It also has `mTabs`.

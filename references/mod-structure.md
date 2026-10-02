@@ -40,6 +40,13 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Private dependency `RHI`, if you use RHI.
 - Module: `IMPLEMENT_MODULE(FMyModModule, MyMod)`.
 
+**Several C++ modules in one mod**
+- A game feature mod with several C++ modules packages and loads with no change to the procedure. Observed: a mod with five `Runtime` modules in phase `Default`, listed in `Modules` in the `.uplugin`. The skill's packaging script worked unchanged (4 min 09 s, game already compiled earlier).
+- The zip has a separate DLL and PDB for each module (`FactoryGameSteam-<Module>-Win64-Shipping.dll`) and one shared `FactoryGameSteam-Win64-Shipping.modules`.
+- In the game the modules load in the order of the `.uplugin`, all in the same millisecond, before `Version check passed` and before the SML mod list.
+- The compiler enforces the boundary between modules. A module that does not have `FactoryGame` in its `Build.cs` dependencies cannot include a game header: `fatal error C1083: Cannot open include file: 'FGTrain.h': No such file or directory`. This can be used to enforce that pure logic does not depend on game classes. Such a module needs only the dependencies `Core` and `CoreUObject`.
+- Shared log category: see "Logging in the mod" in `references/build-install-debug.md`.
+
 **AccessTransformers** (`Config/AccessTransformers.ini`, section `[AccessTransformers]`) give access to private and protected members of the game:
 - `Friend=(Class="AFoo", FriendClass="UBar")`
 - `Accessor=(Class="AFoo", Property="mX")`: generates `GetmX()` and `SetmX()`.

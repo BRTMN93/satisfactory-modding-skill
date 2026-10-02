@@ -23,6 +23,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
 | Tests, release checklist, ficsit.app, licences, pull requests to other people's mods | `references/testing-publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
+| Railways: trains, timetables, stations, platforms, tracks, signals, blocks | `references/railroad.md` |
 | Open questions | `references/open-questions.md` |
 | Recording findings, folding them in, pull requests to this skill | `references/learning.md` |
 
@@ -65,7 +66,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
 
 ### New mod
 1. Prepare the environment following `references/setup.md`. This is done once per computer.
-2. In the CSS editor open `FactoryGame.uproject`, then Alpakit → Create Mod (template e.g. `CPPAndBlueprintBlank`). The mod lands in `Mods/GameFeatures/<Mod>`.
+2. In the CSS editor open `FactoryGame.uproject` and click **Alpakit Dev** on the toolbar (the alpaca icon after the Play group, next to **Platforms**; also in the **File** menu), then **Create Mod**. The templates **Blueprint Only** and **C++ & Blueprint** create a game feature mod in `Mods/GameFeatures/<Mod>`. The plugin name is the mod reference and cannot be changed later. The editor details are in `references/setup.md`.
 3. Fill in `.uplugin` (`SemVersion`, `VersionName`, `GameVersion`, SML dependency `^3.12.0`) and `Build.cs` (Cpp20, FactoryGame and SML dependencies) following `references/mod-structure.md`.
 4. Write the C++ module with a Blueprint root and split the code into lifecycle phases following `references/sml-api.md`.
 5. Package, install, start the game and check the log (below).

@@ -26,12 +26,15 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 **Arrays filled in the root Blueprint**
 - Instance module: `ModConfigurations`, `BlueprintHooks`, `ClientBlueprintHooks`, `WidgetBlueprintHooks`, `GlobalItemTooltipProviders`, `GameMaps`, `SessionSettings`, `RemoteCallObjects`. On a dedicated server the "Client" ones are skipped.
 - World module: `ModSubsystems` (spawned in `CONSTRUCTION`), `mSchematics`, `mResearchTrees`, `mChatCommands`, resource sink point tables, `mContentTagAdditionsTable`.
+- **[?]** A world module's `ModSubsystems` can be set in the constructor of the C++ class (`ModSubsystems.Add(AMySubsystem::StaticClass())`), and the Blueprint child inherits that value. Then only **Root Module** needs ticking in the root Blueprint. It compiles and packages. Whether the subsystem is actually created in the world still needs to be checked by loading a save and logging from the subsystem. Not tested yet.
 
 **Root pattern**
 - A C++ class **without** `bRootModule` + a Blueprint child `RootInstance_<Mod>`, `RootGameWorld_<Mod>` or `RootMenuWorld_<Mod>` with `bRootModule = true`.
 - Exactly one root of each type per mod, otherwise Fatal.
 - Do not set `bRootModule` in the C++ class. The Blueprint child would inherit it and you would get two roots.
 - The order of mods within a phase is undefined.
+- **Root modules must be Blueprint assets, because SML looks for them only in the asset registry.** `PluginModuleLoader.cpp:39-41` calls `FindBlueprintAssetsByTag(..., "bRootModule", {"True"})`. A C++ class with `bRootModule = true` would not be found at all, so this pattern (a C++ class without the flag plus a Blueprint child with the flag) is the only way, not just good practice. Blueprint roots work: in the game the instance module logged `CONSTRUCTION`, `INITIALIZATION` and `POST_INITIALIZATION`.
+- **A validation error on the first save of a module Blueprint is normal.** Saving before ticking **Root Module** gives this in the editor log: `AssetCheck: Error: [AssetLog] …Root….uasset: At least one module of this type was found in this mod, but none were marked as root. Fix by marking at least one as root.` After ticking the flag and saving again, validation passes without an error. The flag is in **Class Defaults**, in the **Details** panel, named **Root Module**.
 
 **Finding other mods' modules**
 - `UGameInstanceModuleManager::FindModule(FName)`, `UWorldModuleManager::FindModule`.
@@ -145,6 +148,7 @@ SUBSCRIBE_METHOD(FCanvas::GetBatchedElements, [](auto& Scope, FCanvas* Self, /* 
 - **Creating:** a Blueprint child of `UModConfiguration` with `FConfigId{ModReference, Category}`.
   - Properties: `UConfigPropertyBool`, `Float`, `Integer`, `String`, `Class`, `Array`, `Section`.
   - Flags: `bRequiresWorldReload` only restricts the UI to the menu, `bHidden`, `bAllowUserReset`.
+  - **[source]** Slider in the mod's settings: use the classes `UCP_Integer` and `UCP_Float` from `Configuration/Properties/WidgetExtension/`. They have `WidgetType` (text field, slider `CPI_Slider` / `CPF_Slider`, spin box, and for integers also a list from an enum) and `MinValue` and `MaxValue`. They inherit from `UConfigPropertyInteger` and `UConfigPropertyFloat`, so reading the value from C++ does not change.
   - Registration through the `ModConfigurations` array, which happens in `INITIALIZATION`.
 - **File:** `<Game>\FactoryGame\Configs\<ModRef>.cfg`. It is JSON with the field `SML_ModVersion_DoNotChange`. In the game, edit the config in Main menu → Mods → `<Mod>`.
 - **Reading from C++:** right-click the config asset → "Generate C++ Config Struct Header", then `F<Asset>Struct::GetActiveConfig(WorldContext)`. If the config is not registered yet or there is no world, you get a zeroed struct.
