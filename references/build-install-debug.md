@@ -18,6 +18,7 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 **Times**
 - First Shipping packaging: 21–47 min. A mod with assets only in a fresh project: 21 min (game compile 297 actions in 700 s, cook 497 s, UnrealPak a few seconds).
 - Later runs, when only the mod changes: 1.3–5 min. Group your changes and compile once.
+- Measured with 16 GB RAM, a game feature mod with five small C++ modules, Steam target only: 49–215 s after a change in one `.cpp` file, 24–44 s with nothing changed.
 
 **How to read the result**
 - Success: `Result: Succeeded`, `BUILD SUCCESSFUL`, `AutomationTool exiting with ExitCode=0`.
@@ -89,6 +90,7 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 
 **Did the mod add errors?** The fastest check is to compare the set of errors with the previous log.
 - A game with only SML has constant errors in the log unrelated to mods (DLSS `kFeatureDLSS_G`, `t.MaxFPS`, Niagara, MVVM in `BPW_JoinGame`, `Array_Sort` in SML's `Widget_SessionSettings`).
+- Loading a freshly created save (new game, only SML installed) also logs several `LogSave: Error: Object Reference '<id>::Persistent_Level:PersistentLevel.BP_CreatureSpawner<N>' is contained inside of the World Partition Cell ...` lines, and the same for `BP_Spline<N>`. Exclude them when comparing error sets.
 - Method: `grep -E "Fatal|: Error:"` in both logs, strip the timestamps (`sed -E 's/^\[[^]]*\]\[[^]]*\]//'`), `sort -u` and `diff`. Observed: the set was identical to the one from the `ExampleMod` log.
 
 **Logging in the mod**

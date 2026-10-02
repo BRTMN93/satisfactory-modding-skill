@@ -13,9 +13,26 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Automation: a separate test mod enabled by a launch parameter (e.g. `-MyModTestBridge`) reads commands from a file (`commands.jsonl`), loads saves, builds and dismantles buildings, samples frame times and memory, and writes the results to files. I picked this pattern up from another modder.
 - Check rendering changes by comparing images pixel by pixel (old and new build, same save).
 
+- **A test save built under another mod profile loses buildables when it is re-saved without those mods.** Track pieces and a conveyor lift were missing after a save was loaded and saved again in a profile with only SML. The save's session settings still carried the other profile's mod settings (`SessionSettings=...InfiniteZoop.BlueprintZoop=...` in `LogGameMode: ProcessServerTravel`). Build and change test saves only in the test profile, and after every change check them in the game, for example with one full lap of a test train. (2026-10-02, game 502094, SML 3.12.0)
+
 **Launching the game for tests**
-- **[source]** Starting the game straight into a save, according to docs.ficsit.app (Development → Testing):
-  `-ini:Engine:[/Script/EngineSettings.GameMapsSettings]:GameDefaultMap=/Game/FactoryGame/Map/GameLevel01/Persistent_Level.Persistent_Level,[/Script/EngineSettings.GameMapsSettings]:LocalMapOptions=?skipOnboarding?listen?loadgame=<save name without path and extension>`.
+- **Starting the game straight into a save works** (docs.ficsit.app, Development → Testing). Launch `<Game>\FactoryGameSteam.exe` with:
+  `-ini:Engine:[/Script/EngineSettings.GameMapsSettings]:GameDefaultMap=/Game/FactoryGame/Map/GameLevel01/Persistent_Level.Persistent_Level,[/Script/EngineSettings.GameMapsSettings]:LocalMapOptions=?skipOnboarding?listen?loadgame=<save name without path and extension>`
+  - The argument has no spaces, so `Start-Process -ArgumentList @(...)` passes it unquoted.
+  - The Steam client must be running.
+  - **The Steam copy also needs `<Game>\Engine\Binaries\Win64\steam_appid.txt` containing `526870`.** Without it the log shows `LogSteamShared: Warning: SteamAPI failed to initialize, conditions not met.` and `LogOnlineServices: Game restarting within Steam client, exiting`. Steam then starts a second copy with only `-NO_EOS_OVERLAY`. That copy writes `FactoryGame_2.log`, because the first copy still holds the log. All your arguments are lost and the game sits in the main menu.
+  - The root `FactoryGameSteam.exe` is a stub that stays alive next to `FactoryGameSteam-Win64-Shipping`.
+  - On a 180 KB save it took 16–20 s from `Start-Process` to the world's BeginPlay.
+  - Evidence: `LogInit: Command Line:` shows the arguments, then `LogGame: World Serialization (load)`.
+  - **The local player does not get the character stored in the save.** It spawns somewhere else, and the stored character stays in the world as an idle pawn named "player". This was reported by the user from the packaged game. It is harmless for scenarios that do not need the player. Do not save the game from such a session, though, or the save gains a second player. **[?]** The cause has not been checked. The likely one is a different player identity than in a normal Steam start.
+- **A developer test mode behind a custom launch parameter works in Shipping.**
+  - `FParse::Value(FCommandLine::Get(), TEXT("MyModTest="), Name)` reads `-MyModTest=<Name>`.
+  - Start the scenario on the next tick after the world module's `POST_INITIALIZATION`.
+  - Write steps and the result to the log under a fixed tag.
+  - Close the game afterwards with `GLog->Flush()` and then `FPlatformMisc::RequestExit(false, TEXT("<call site>"))`. This logs `FPlatformMisc::RequestExit(0, <call site>)` and `Engine exit requested`, then shuts down cleanly (`LogExit: Exiting.`) in about 7 s.
+  - A script that reads the log should move the old `FactoryGame.log` aside itself before the launch, so no line from an earlier run is mistaken for a result.
+  - One cycle from launch to result took 22–24 s without packaging and 48–71 s with incremental packaging of an unchanged mod.
+  - Scenarios that wait for the game, such as a train run, can end later from a timer or a delegate.
 - **[source]** The documentation also gives a ready-made PowerShell script for launching the game (with, among others, the parameters `-loadLatestSave` and `-multiplayer`) and the parameters `-EpicPortal`, `-NoSteamClient`, `-log`, `-NewConsole`, `-nosplash`, `-windowed`, `-WaitForDebugger`. The syntax comes from a summary of the page, so it must be confirmed against the source. **[?]** Not tested yet.
 - **[source]** Testing with two clients locally: the host sets the session type to `IP`, the client types `open 127.0.0.1` in the console. Dedicated server locally: `FactoryServer.exe -log -EpicPortal -NoSteamClient`. Source as above (docs.ficsit.app, Development → Testing).
 

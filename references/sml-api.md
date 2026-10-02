@@ -17,6 +17,12 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - World modules get `CONSTRUCTION` and `INITIALIZATION` at `OnActorsInitialized`, and `POST_INITIALIZATION` at the world's BeginPlay.
 - In a world module's `POST_INITIALIZATION`, buildings from the save are already registered.
 - `AModSubsystem::Init()` fires before the world's BeginPlay. Set "loading in progress" flags there.
+- Measured on a save load:
+  1. `AModSubsystem::Init`,
+  2. the world module's `CONSTRUCTION` and `INITIALIZATION` right after `LogGame: World Serialization (load)`,
+  3. `POST_INITIALIZATION` about 1.5 s later, before `LogLoad: Took N seconds to LoadMap(...)`.
+- In `POST_INITIALIZATION`, and on the next tick via `GetTimerManager().SetTimerForNextTick`, the save's railway data is readable: `AFGRailroadSubsystem::GetAllTrainStations`, `GetAllTrains` and `AFGBuildableSubsystem::GetTypedBuildable<AFGBuildableTrainPlatformCargo>`.
+- `AFGRailroadSubsystem::Get(World)` returns null in the main menu world. That makes a good "game world only" guard.
 
 **What to do in which phase**
 - `CONSTRUCTION`: your own state and subsystems. The instance config is not registered yet.
@@ -26,7 +32,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 **Arrays filled in the root Blueprint**
 - Instance module: `ModConfigurations`, `BlueprintHooks`, `ClientBlueprintHooks`, `WidgetBlueprintHooks`, `GlobalItemTooltipProviders`, `GameMaps`, `SessionSettings`, `RemoteCallObjects`. On a dedicated server the "Client" ones are skipped.
 - World module: `ModSubsystems` (spawned in `CONSTRUCTION`), `mSchematics`, `mResearchTrees`, `mChatCommands`, resource sink point tables, `mContentTagAdditionsTable`.
-- **[?]** A world module's `ModSubsystems` can be set in the constructor of the C++ class (`ModSubsystems.Add(AMySubsystem::StaticClass())`), and the Blueprint child inherits that value. Then only **Root Module** needs ticking in the root Blueprint. It compiles and packages. Whether the subsystem is actually created in the world still needs to be checked by loading a save and logging from the subsystem. Not tested yet.
+- A world module's `ModSubsystems` can be set in the constructor of the C++ class (`ModSubsystems.Add(AMySubsystem::StaticClass())`), and the Blueprint child inherits that value. Then only **Root Module** needs ticking in the root Blueprint. The subsystem is spawned on a save load: a log line from its `AModSubsystem::Init()` override appears before the world module's phases. (2026-10-02, game 502094, SML 3.12.0)
 
 **Root pattern**
 - A C++ class **without** `bRootModule` + a Blueprint child `RootInstance_<Mod>`, `RootGameWorld_<Mod>` or `RootMenuWorld_<Mod>` with `bRootModule = true`.
