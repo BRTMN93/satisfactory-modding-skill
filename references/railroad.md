@@ -14,10 +14,16 @@ Most of this file was first read from game headers (changelist 491125, later che
   - `MaxSpeed` 200 km/h (5555 cm/s),
   - `Mass` 330 t with the wagon empty.
   **[source]** It also has `MaxBrakeDeceleration` and `MaxBrakeDistance`.
-- `AFGTrain::mAtcData.Path` is the autopilot's current route. `Path->Station` is the target station. `Path->PathPoints[0].Distance` is the route length in cm, measured from the first path point:
-  - started at a station, it equals the distance driven (a 536 m path and 536 m driven, a 632 m path and 632 m driven),
-  - started between stations, the train's front is behind the first point (a 32 m path, 55 m driven).
-  The path is cleared while the train is docked. `mSimulationData.Velocity` is the signed speed in cm/s.
+- `AFGTrain::mAtcData.Path` is the autopilot's current route. `Path->Station` is the target station. The path is cleared while the train is docked. `mSimulationData.Velocity` is the signed speed in cm/s.
+  - **Format of the points (`FRailroadPath::PathPoints`):** one point per track on the route. A point's `TrackConnection` is the connection at the far end of that track in the driving direction.
+    - Point 0 is the far end of the track under the locomotive's front. For a train docked at a station, that is the station's own stop connection.
+    - The last point is the stop connection of the target station, the one whose `GetStation()` returns it. `FRailroadPathFindingResult::Goal` is the same connection.
+    - Consecutive points are linked like this: the next point is `X->GetOpposite()` for one `X` in `Previous->GetConnections()`.
+    - Signals do not appear as points. A signal is found through `GetFacingSignal()` of a point's connection.
+  - `Distance` (cm) of a point is the sum of the lengths of the tracks of all later points. The last point has 0. So `Path->PathPoints[0].Distance` is the route length in cm, measured from the first path point, and it leaves out the first point's own track (a 680.0 m route started 85 m before the end of a 152 m track):
+    - started at a station, it equals the distance driven (a 536 m path and 536 m driven, a 632 m path and 632 m driven),
+    - started between stations, the train's front is behind the first point (a 32 m path, 55 m driven).
+  - Evidence (game 502094): three native routes of 19, 14 and 16 points were checked point by point. All links matched and the worst distance error was 0.0 cm.
 - `AFGTrain::mSelfDrivingData.State` is the AI state (`SDLS_Idle`, `SDLS_FollowPath`, `SDLS_Docking`, `SDLS_DockingCompleted`). `mDockedAtStation` is the station building the train is docked at.
 - **[source]** `AFGBuildableRailroadTrack`: `GetLength`, `GetConnection(0/1)`, `GetVehicles`, `GetSignalBlock`. `UFGRailroadTrackConnectionComponent` (`FGRailroadTrackConnectionComponent.h`): connections, switch position, signals, station, `GetSignalBlock`.
 - `AFGBuildableRailroadStation::GetStationIdentifier()` leads from a station building to the identifier used in timetables, and `AFGTrainStationIdentifier::GetStation()` goes back.
@@ -91,6 +97,9 @@ Measured on a freight platform with one wagon (3200 iron ore, platform 4800), ru
 - **The "nothing" filter**, `UFGNoneDescriptor::StaticClass()` (`FGNoneDescriptor.h`) as the only load filter:
   - With `TDD_LoadUnloadOnce` the train docks and the docking ends in the same frame: `TDS_Docked` and `TDS_None` together, nothing moved. Turning the autopilot off inside the `TDS_Docked` handler leaves the train parked at the station (`TS_Parked`, 0 m moved).
   - With `TDD_FullyLoadUnload` + `IsDurationAndRule = true` it never ends. The platform stays in `ETPDS_WaitForTransferCondition` with `IsFullLoad() == 0`.
+  - **Exception:** a stop with "fully load/unload AND 0 s" and the "nothing" filter holds a locomotive-plus-wagon train docked for good. It ended at once for a train of two locomotives and two wagons at a station with one freight platform: `TDS_ReadyToDock`, `TDS_Docked` and `TDS_None` came in the same tick.
+    - **[?]** The likely reason is that none of its wagons stands on a platform there (the second locomotive takes the only platform, see "Which vehicle stands on which platform"), so the station has nothing to wait for. Not checked further.
+    - A test that needs a train stuck in a docking has to pick a train whose wagon really stands on a platform.
 - **[source]** FicsIt-Networks exposes the same timetable API in Lua.
 
 ## Driving a train through its timetable
@@ -131,13 +140,81 @@ Train->SetSelfDrivingEnabled(true);
 
 ## Routes, signals, blocks
 
-- **[source]** `FRailroadNavigation::FindPathSync(AFGLocomotive*, AFGBuildableRailroadStation*, FRailroadGraphAStarFilter)` (`RailroadNavigation.h`): native A*, synchronous. The target can only be a station, and the locomotive does not turn around.
-- **[source]** The private `FindPathSyncInternal(start, end, filter, out_pathPoints)` finds a route between any two track connections. It is a candidate for building custom routes (access via AccessTransformers). Still to be checked.
+- `FRailroadNavigation::FindPathSync(AFGLocomotive*, AFGBuildableRailroadStation*, FRailroadGraphAStarFilter)` (`RailroadNavigation.h`): native A*, synchronous. A mod can call it, and the target is a station. **[source]** The locomotive does not turn around.
+  - Called from mod code for a parked train with the autopilot off and no timetable, it returned `RPFR_Success` with a 4-point, 48.0 m route to a station the train had never been sent to. The train stayed untouched: `mAtcData.Path` was still empty afterwards.
+  - It gives the exact route the autopilot would take on any leg, so there is no need to rebuild the game's cost function. Evidence (game 502094): `asked the game directly for a route …: RPFR_Success, 4 points, 48.0 m …; route on the train afterwards: no path`.
+  - A route handed to the autopilot may end on plain track in front of a signal, not only at a station (see "A route may end on plain track" below).
+- **[source]** The private `FindPathSyncInternal(start, end, filter, out_pathPoints)` finds a route between any two track connections. It is a candidate for building custom routes (access via AccessTransformers). Still to be checked. A route of your own can also be given to the autopilot without it (see "Giving the autopilot a route of your own" below).
 - **[source]** The edge cost is computed by `FRailroadGraphAStarFilter::GetTraversalCost`.
 - **[source]** `AFGTrainScheduler` (`FGTrainScheduler.h`): native block reservations, priorities and starvation protection. The game itself resolves conflicts at junctions.
 - **[source]** `FFGRailroadSignalBlock` (`FGRailroadSignalBlock.h`): `GetAspectFor(signal)`, `IsOccupied`, `CreatePathReservation`, `CreateExclusiveReservation`. An ordinary block is exclusive. In a path block several trains run at once if their routes do not cross.
 - **[source]** Aspects: `ERailroadSignalAspect` (none, clear, stop, docking).
 - **[source]** Driving control: `UFGLocomotiveMovementComponent` has `SetThrottleInput`, `SetAirBrakeInput`, `SetEmergencyBrake`.
+
+### Signals and track connections
+
+- **A signal between two tracks, seen from the connections.** Take a one-way block signal at the joint between track A (before the signal) and track B (behind it):
+  - `GetGuardedConnections()` is A's connection at the joint. `GetObservedConnections()` is B's connection at the joint.
+  - A's connection returns the signal from `GetFacingSignal()`. B's connection returns it from `GetTrailingSignal()`.
+  - `GetObservedBlock()` is B's block (`AFGBuildableRailroadTrack::GetSignalBlock()` of B has the same `ID`).
+  - A connection with a trailing signal and no facing signal cannot be entered from that side. This is how a walk over the track graph sees a one-way signal from behind.
+  - Evidence: a dump of 12 block signals and 37 tracks, for example `signal S03 … guards [T10.1], observes [T09.0], observed block 3`.
+- **Path signals as a train sees them.** A path signal shows `RSA_Stop` until an approaching train gets its reservation, so the autopilot brakes for it.
+  - A train doing 100 km/h slowed to 51 km/h. The signal turned `RSA_Clear` when the train was 48 m in front of it, and the train accelerated again (same numbers on two laps).
+  - At a path signal whose block was busy, the train stood 10.0 m in front of it and left when the signal cleared.
+  - Evidence (game 502094): `T34.1 segment 7 48 m … RSA_Stop` and `… RSA_Clear` in the same tick.
+- **Block signals and path signals open the same window.** `mInteractWidgetSoftClass` read from instances of `Build_RailroadBlockSignal_C` and `Build_RailroadPathSignal_C` is the same class, `/Game/FactoryGame/Buildable/Factory/Train/Signal/Widget_RailroadSignal.Widget_RailroadSignal_C`. So one widget hook on that class covers both kinds (hooks: `references/sml-api.md`, section 5; the window's widget tree: `references/rendering-ui.md`). A path signal with no train near it shows `RSA_Stop` with `RBV_Valid`. Evidence: a dump of 9 block and 3 path signals.
+- **Signal blocks and the trains' graph id do not exist yet in the first tick after a save is loaded.**
+  - In the first frame of the loaded world every signal reported `HasObservedBlock() == false`, `GetAspect() == RSA_Stop` and `GetBlockValidation() == RBV_Unvalidated`. `AFGTrain::GetTrackGraphID()` returned -1, while the track under the train's first vehicle already returned its graph id.
+  - Two seconds later (not measured more finely) all 12 signals had a block and `RBV_Valid`, and the trains returned the graph id.
+  - Code that reads the signal layout at world start has to wait, for example until every signal with `HasValidConnections()` has `HasObservedBlock()`. It should take the graph id from a track, not from the train.
+  - Evidence (game 502094): test log, frame 0: `12 of 12 signals observe no block yet`, `track graph -1, its first vehicle's track is in graph 2`. Frame 62: all valid.
+- **Replacing signals changed the track graph.** A player replaced three block signals with path signals, and the track graph came back with 38 tracks instead of 37. One 56.43 m track had become two, with the same summed length, and the new joint carried one of the new signals (game 502094).
+  - **[?]** The likely cause is that a signal placed in the middle of a track piece makes the game split that piece into two track buildables (a players' tutorial for 1.0 says free placement "creates new segments"). Not reproduced from code.
+  - If so, a mod's own track graph and any stored reference to a track must be refreshed when a signal is built, not only when tracks are.
+
+### What the autopilot does with a route
+
+- **What the autopilot looks at: `mAtcData.TargetPoints`.** One point per signal on the route (with its current aspect), one per switch (aspect `RSA_None`) and one for the goal (`IsGoal`, aspect `RSA_Dock` when the goal is a station). Each point has `PathSegment` (the index of the route point) and `Distance` from the train.
+  - `CurrentPathSegment` is the index of the route point at the far end of the track under the train's front. `CurrentConnection` is that point's connection.
+  - A train stops 10.0 m before a signal at stop (`NextRestrictiveSignalStopOffset` 1000). The stop offset for docking is 8.0 m.
+  - With no route (docked, or autopilot idle) the points have `PathSegment` -1 and list the signals along the track ahead.
+  - Evidence (game 502094): control data logged at every tick in which it changed, for example `T24.0 segment 15 10 m … RSA_Stop`, `ahead T24.0 10.0 m, speed 0 km/h`, `restrictive T31.1 RSA_Dock … stop offset 8.0 m`.
+- **When the game looks for a route by itself (trains running undisturbed).** `FRailroadNavigation::FindPathSync` was called:
+  - once for a train when its autopilot was switched on (on the next tick),
+  - once after each docking ended: docking state `TDS_None`, then `TDS_ReadyToDock` one frame later, the call in the frame after that, then `TDS_None` again.
+  - Nothing else: 11 calls for three trains in 190 s, although they followed each other from signal to signal.
+  - Every call came on the game thread with the default filter (`AcceptsPartialSolution` 0, `IgnoreSignals` 0).
+  - Evidence (game 502094): a test log with a hook on `FindPathSync` that only logs.
+- **What makes the game look for a route again while a train is on its way.** Each action was done to a train cruising on its route with the autopilot on, and the `FindPathSync` calls for that train were counted for the next 8 s:
+  - `AFGRailroadTimeTable::SetCurrentStop(<the same index>)`: no call, route kept.
+  - `SetStops(<the same stops>)` (the current stop index stayed): no call, route kept.
+  - `SetSelfDrivingEnabled(false)` followed by `SetSelfDrivingEnabled(true)` in one frame: the route was cleared and one call came at once, for a route from where the train was.
+  - `SetCurrentStop(<another stop>)`: the route was cleared and one call came at once, to the new stop. The train kept rolling.
+  - Dismantling a block signal on the route ahead of the train: no call in 44 s, route kept, no autopilot error.
+  - So a mod that wants the game to ask for a route again (to answer in a `FindPathSync` hook) can toggle the autopilot or change the current stop. A mod that writes routes itself must expect the game to replace them after exactly these actions and after every docking.
+  - Evidence (game 502094): `current stop changed to the other station: 1 pathfinding calls for the test train and 2 route changes on it in the 8 s after, error SDLE_NoError`.
+
+### Giving the autopilot a route of your own
+
+- **The autopilot drives a route given by a mod, and signals follow that route.** A hook on `FindPathSync` (`references/sml-api.md`, section 5) replaced the result for one train with a route through a 320 m siding instead of the game's 228 m main line. The new route had the same first and last points as the game's route, with the siding's connections spliced in and `Distance` recomputed. It was a new `FRailroadPath` in `Result.Path` (`Goal` and `Path->Station` unchanged).
+  - The train took the siding five times out of five, on a layout with block signals only and on one with path signals at the junction entrances. There was no autopilot error, and it docked normally.
+  - The train kept the very `FRailroadPath` object the hook returned (`mAtcData.Path` compared equal to it) until the next docking.
+  - The autopilot set the switch itself, and the path signal in front of the switch cleared for the mod's diverging route.
+  - Other trains, whose results were left alone, kept to the main line.
+  - Evidence (game 502094): two test runs, `autopilot errors 0`.
+- **A route can be given to a train without any hook: `AFGTrain::mAtcData.SetPath(Result)`.** `mAtcData` is a public member and `FTrainAtcData::SetPath(const FRailroadPathFindingResult&)` is exported.
+  - A ticker noticed a new route of the game on the train (`mAtcData.Path` was not the mod's object). It built a `FRailroadPathFindingResult` (`Locomotive`, `Goal` = the last point's connection, `Path` = a new `FRailroadPath` with the same `Station`, `Result = RPFR_Success`) and called `SetPath`.
+  - `SetPath` returned true and `CurrentPathSegment` went back to 0. The train kept the mod's `FRailroadPath` object and drove it: three trips out of three through the siding, no autopilot error.
+  - It works right at departure (train standing, the frame after the game's own `FindPathSync`) and on the way: at 14 km/h and at 104 km/h, three tracks into the route. The mod's route started at the far end of the track the train was on (the game's points from `CurrentPathSegment` on), the way the game's own routes start.
+  - Not tried: a route whose first point lies behind the train.
+  - Evidence (game 502094): `route written into the control data on the way, at 104 km/h: SetPath 1, segment 3 -> 0, on the train now the mod's: 18 points, 568.1 m`.
+- **A route may end on plain track, in front of a signal, not only at a station.** The hook returned a route cut off at the connection guarded by a siding's exit path signal (last point = that connection, `Goal` = the same, `Path->Station` left as the real target).
+  - The autopilot treated the last point as its goal: a target point with `IsGoal` and aspect `RSA_Dock`. It braked to a stop 8.0 m before that connection, like for docking.
+  - The train then stood there in `SDLS_FollowPath`, docking state `TDS_None`, error `SDLE_NoError`, `TimeWaitingAtSignal` 0. The game made no further `FindPathSync` call for it for 90 s, while two other trains passed on the neighbouring track. The game does not look for a new route by itself in this state.
+  - Switching the autopilot off and on makes it look: `FindPathSync` came on the next tick with a route starting where the train stood. The train then waited at the path signal (`TimeWaitingAtSignal` now counted up) and left when it cleared.
+  - So `FindPathSync` itself still takes a station, but the route handed to the autopilot can stop short.
+  - Evidence (game 502094): `targets 1: T24.0 segment 18 8 m … RSA_Dock goal`, `held for 60 s: 0 pathfinding calls for the test train meanwhile, error SDLE_NoError, ai SDLS_FollowPath`.
 
 ## Pitfalls
 

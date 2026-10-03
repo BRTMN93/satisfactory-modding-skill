@@ -112,6 +112,12 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - `InvalidateRuntimeInstanceDataForIndex`: removal of lightweight buildings.
 - `AFGHUD::CloseRespawnUI`: the player has finished joining, you can send data from here.
 - `UFGSaveSession::SaveGame(const FString&, FOnSaveGameComplete, void*)`: the "after" hook fires on manual save and on autosave (`<session>_autosave_0..2`). The serialization itself happens at the end of the frame.
+- `FRailroadNavigation::FindPathSync(AFGLocomotive*, AFGBuildableRailroadStation*, FRailroadGraphAStarFilter)`: a static member function that returns a struct by value. A "before" hook on it works:
+  `SUBSCRIBE_METHOD(FRailroadNavigation::FindPathSync, [](auto& Scope, AFGLocomotive* Locomotive, AFGBuildableRailroadStation* Station, FRailroadGraphAStarFilter Filter) { … })`
+  - There is no `Self` argument.
+  - `Scope(Locomotive, Station, Filter)` runs the original and returns its result. `Scope.Override(Result)` replaces it. A handler that returns without touching `Scope` lets the original run.
+  - Log line: `LogNativeHookManager: Display: Successfully hooked function FRailroadNavigation::FindPathSync at 00007FFD5FAD6D90`.
+  - A train drove the route given through `Override` (`references/railroad.md`, "Giving the autopilot a route of your own").
 - Placing one blueprint with buildings triggers about 300 hooks. Merge such series into one batch of work.
 
 ```cpp

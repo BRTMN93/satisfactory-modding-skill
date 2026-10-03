@@ -15,6 +15,9 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 - Without `-Target` it builds both targets, `FactoryGameEGS` and `FactoryGameSteam`. `-Target=FactoryGameSteam` halves local test time.
 - Servers: `-server -serverplatform=Win64+Linux`. Linux needs the toolchain from section 2.7 (`references/setup.md`).
 
+**Checks in the Shipping build**
+- **[source]** Mod code is compiled with checks active in the Shipping build. The starter project's `Source/FactoryShared.Target.cs` sets `bUseChecksInShipping = UseChecksInShippingOverride`, which is `true` by default (`// MODDING EDIT: we want checks in shipping by default`), and the packaging log says `Building with command line overrides: ChecksInShipping: True (default: false); LinkType: Modular`. So a failed `check()` in a mod stops the packaged game.
+
 **Times**
 - First Shipping packaging: 21–47 min. A mod with assets only in a fresh project: 21 min (game compile 297 actions in 700 s, cook 497 s, UnrealPak a few seconds).
 - Later runs, when only the mod changes: 1.3–5 min. Group your changes and compile once.
