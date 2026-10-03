@@ -84,6 +84,12 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
   - `Scope.Cancel()` skips the original (void functions). `Scope.Override(v)` skips it and sets the result (functions with a result).
   - Simply returning from the handler without calling `Scope` still runs the original.
 - "After": for void functions `void(Class* Self, Args...)`, and for functions with a result **the result comes first**: `void(const Ret& Result, Class* Self, Args...)`. "After" hooks always fire, even after `Cancel`.
+- **[source]** In a hook on a **member** function that returns a class by value (a `TWeakPtr`, a `TSharedPtr`, an `FString`, any struct), call the original through `Scope(...)` before `Scope.Override(...)`.
+  - SML's thunk for that case, `HookInvokerExecutorMemberFunction::ApplyCallUserTypeByValue` (`Patching/NativeHookManager.h`), gets the caller's hidden return slot `OutReturnValue`, lets the original construct the result there, and at its end always runs `*OutReturnValue = Scope.GetResult();`, an assignment and not a construction.
+  - When no handler called the original, the slot is still uninitialized stack memory, and the assignment operator treats it as a live object: for a smart pointer it releases a reference through a garbage pointer.
+  - So a handler that wants to return an empty result calls the original first, undoes what the original did, and then overrides. That order ran about 25 000 times in the packaged game on `FFGRailroadSignalBlock::CreatePathReservation`, which returns a `TWeakPtr`, without a crash. The other order was not tried.
+  - Static and free functions are not affected (`HookInvokerExecutorGlobalFunction::ApplyCall` returns by value the normal way), and neither are scalar results (`ApplyCallScalar`).
+  - Evidence: SML 3.12.0, `Mods/SML/Source/SML/Public/Patching/NativeHookManager.h`, `ApplyCallUserTypeByValue`. (2026-10-03, SML 3.12.0)
 - Handlers run in registration order.
 - Lambdas live until the end of the game. Capture `this` and values, never local variables by reference.
 
@@ -118,6 +124,12 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
   - `Scope(Locomotive, Station, Filter)` runs the original and returns its result. `Scope.Override(Result)` replaces it. A handler that returns without touching `Scope` lets the original run.
   - Log line: `LogNativeHookManager: Display: Successfully hooked function FRailroadNavigation::FindPathSync at 00007FFD5FAD6D90`.
   - A train drove the route given through `Override` (`references/railroad.md`, "Giving the autopilot a route of your own").
+- **Hook targets in the railway signalling, verified.** All four installed in `POST_INITIALIZATION` with `SUBSCRIBE_METHOD` (plain structs, no sample object) and fired on the game thread:
+  - `FFGRailroadSignalBlock::GetAspectFor`, a const method returning an enum: `[](auto& Scope, const FFGRailroadSignalBlock* Self, AFGBuildableRailroadSignal* Signal)`. `Scope(Self, Signal)` returns the game's aspect, `Scope.Override(ERailroadSignalAspect::RSA_Stop)` replaces it.
+  - `FFGRailroadSignalBlock::CreatePathReservation`, returning a `TWeakPtr` by value: `[](auto& Scope, FFGRailroadSignalBlock* Self, AFGTrain* Train, AFGBuildableRailroadSignal* EntrySignal, int32 EntryPathSegment, FRailroadPathSharedPtr TrainPath)`. `CreateExclusiveReservation` is the same without the last argument.
+  - `FFGRailroadBlockReservation::Approve`, a void method: `[](auto& Scope, FFGRailroadBlockReservation* Self)`. The train and the entry signal are public members of `Self` (`Train`, `EntrySignal`).
+  - With the handlers rejecting every call in their first line, a train's pass showed the same aspects at the same distances and speeds as in a run without the hooks. Call rates in a world with three trains and 16 signals: `GetAspectFor` 1.3 a second, reservation creation and approval 0.25 a second each.
+  - What these hooks do to trains: `references/railroad.md`, "Holding a train at a signal with hooks". Log lines: `Successfully hooked function FFGRailroadSignalBlock::GetAspectFor at …`, the same for the other three. (2026-10-03, game 502094, SML 3.12.0)
 - Placing one blueprint with buildings triggers about 300 hooks. Merge such series into one batch of work.
 
 ```cpp
