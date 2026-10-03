@@ -79,4 +79,6 @@ Create a `local/` folder in the skill (it is ignored by git):
 
 The easiest way is to let the skill do it: say yes when it offers a pull request. It forks the repository, commits the folded findings on a `findings/<date>-<topic>` branch and opens the pull request with the evidence.
 
+The owner of the repository can ask the skill chat to merge the users' pull requests into a new version: it checks each one (markers, evidence, versions, privacy, contradictions), merges the accepted ones locally and reports; pushing stays the owner's decision (`references/learning.md`, section 8).
+
 By hand: fork, edit the files in `references/` (or add entries to `learned/findings.md`), keep the markers honest, and say in the pull request what you tested, how and on which game changelist, SML and engine version.

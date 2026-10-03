@@ -105,3 +105,17 @@ The skill is public. Before any commit:
 - `scripts/check-private.ps1` searches the skill's tracked files for every line of `local/private-strings.txt` (user names, e-mail, Steam ID, private paths, unpublished project names) and exits with an error if it finds one.
 - `local/` is in `.gitignore`. It holds the owner's personal conventions (`local/user.md`) and private strings. Never move anything from `local/` into tracked files.
 - When a finding came from a private project, describe the fact, not the project.
+
+## 8. Maintainer: merging contributions into a new version
+
+For the owner of the upstream repository. Trigger: the owner asks to merge the users' contributions. Reading pull requests is free; merging on GitHub and pushing need the owner's explicit yes each time.
+
+1. List the open pull requests: `gh pr list --repo <owner/name> --state open`. None: say so and stop.
+2. Check each one (`gh pr diff`, then `gh pr checkout <number>` on a branch):
+   - every new statement has a marker, evidence and the versions it was found on,
+   - nothing in it is already in the skill, and nothing contradicts the existing text (a contradiction goes to the owner, with both sides),
+   - no personal data and no private project: `scripts/check-private.ps1` is clean on that branch,
+   - it stays inside the skill's folder and its topic.
+3. Merge the accepted ones into `main` locally (`git merge --no-ff`). On a conflict keep both statements and ask the owner when they disagree. For one that needs changes or is rejected, draft the reply as text for the owner; do not post it.
+4. Run `scripts/check-private.ps1`. Raise the "Verified on" line in `SKILL.md` only when the owner says so. Commit with a plain message that lists what came in and thanks the contributors in the text, not as co-authors.
+5. Report to the owner: which pull requests were merged, which wait for an answer, and what changed in each file. Push only when the owner says so.
