@@ -40,6 +40,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
     - This partly answers the skill's open question "which branch to take the starter project from": `master` follows the current game, and `currentVersion.txt` says which changelist the headers are for.
 17. **The folder you work in does not have to be the project that is built.** Observed: sessions worked on a copy of the sources on the desktop (1 GB, without `Intermediate`, `Binaries` and Wwise), while building happened in a second copy on another drive. Before you record environment paths, check where `Binaries`, `Intermediate` and `Saved\ArchivedPlugins` are. The simplest setup is one copy that you work in.
 18. **Before testing, check which mods are in the game installation.** Mods that interfere with the same area distort the results of experiments. Observed: the game had two mods that replace train routes and timetables. The list is given by the directories `<Game>\FactoryGame\Mods` and `<Game>\FactoryGame\Mods\GameFeatures`. Test in a separate SMM profile with SML only.
+19. **A multicast delegate property wants the address of its value.** `FMulticastDelegateProperty::GetMulticastDelegate(const void* PropertyValue)` takes `Property->ContainerPtrToValuePtr<void>(Object)`, not the object. Passing the object compiles, and broadcasting then crashed the game with a jump to address 0 and a corrupted call stack. `AddDelegate` and `RemoveDelegate` take the object as `Parent`. (2026-10-02, UE 5.6.1-CSS)
 
 ## 12. Coroutines (UE5Coro) and splitting work across frames
 
