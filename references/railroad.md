@@ -192,6 +192,7 @@ Train->SetSelfDrivingEnabled(true);
   - `SetSelfDrivingEnabled(false)` followed by `SetSelfDrivingEnabled(true)` in one frame: the route was cleared and one call came at once, for a route from where the train was.
   - `SetCurrentStop(<another stop>)`: the route was cleared and one call came at once, to the new stop. The train kept rolling.
   - Dismantling a block signal on the route ahead of the train: no call in 44 s, route kept, no autopilot error.
+  - Standing at a signal at stop: no call. `mSelfDrivingData.TimeWaitingAtSignal` counts the seconds. At 300 s (`mLongWaitAtSignalThreshold`, game 502094) the train's error becomes `SDLE_LongWaitAtSignal` and the status delegate fires with `TS_SelfDriving`. The game still does not look for another route (watched for 20 s after the error, on two trains). A train held at the exit signal of the station it just docked at keeps the docking state `TDS_ReadyToDock` while it waits.
   - So a mod that wants the game to ask for a route again (to answer in a `FindPathSync` hook) can toggle the autopilot or change the current stop. A mod that writes routes itself must expect the game to replace them after exactly these actions and after every docking.
   - Evidence (game 502094): `current stop changed to the other station: 1 pathfinding calls for the test train and 2 route changes on it in the 8 s after, error SDLE_NoError`.
 
@@ -213,6 +214,7 @@ Train->SetSelfDrivingEnabled(true);
   - The autopilot treated the last point as its goal: a target point with `IsGoal` and aspect `RSA_Dock`. It braked to a stop 8.0 m before that connection, like for docking.
   - The train then stood there in `SDLS_FollowPath`, docking state `TDS_None`, error `SDLE_NoError`, `TimeWaitingAtSignal` 0. The game made no further `FindPathSync` call for it for 90 s, while two other trains passed on the neighbouring track. The game does not look for a new route by itself in this state.
   - Switching the autopilot off and on makes it look: `FindPathSync` came on the next tick with a route starting where the train stood. The train then waited at the path signal (`TimeWaitingAtSignal` now counted up) and left when it cleared.
+  - The same happened with a block signal in that place: the train stopped 8.0 m before the connection the signal guards and did not pass it, although nothing held the signal at stop.
   - So `FindPathSync` itself still takes a station, but the route handed to the autopilot can stop short.
   - Evidence (game 502094): `targets 1: T24.0 segment 18 8 m … RSA_Dock goal`, `held for 60 s: 0 pathfinding calls for the test train meanwhile, error SDLE_NoError, ai SDLS_FollowPath`.
 
