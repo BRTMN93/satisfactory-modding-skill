@@ -88,4 +88,4 @@ By hand: fork, edit the files in `references/` (or add entries to `learned/findi
 - [BRTMN93](https://github.com/BRTMN93): author and maintainer.
 - [Claude](https://claude.com/claude-code) (Anthropic): co-author. Wrote and folded most of the findings, the procedures in `references/learning.md` and the scripts, working in the author's sessions.
 
-Everyone whose findings are merged is thanked in the commit text.
+Everyone whose findings are merged is thanked in the commit text. GitHub's contributor list counts commit authors, so commits written by Claude carry Claude as their author.
