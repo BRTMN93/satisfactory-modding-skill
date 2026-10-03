@@ -33,6 +33,15 @@ ENQUEUE_RENDER_COMMAND(MyEndDraw)([Res](FRHICommandListImmediate& RHICmdList) {
 // End of drawing refreshes only the top mip. Recompute the others separately (e.g. UpdateResourceImmediate(false)).
 ```
 
+**A render target (any texture) has no resource when the game cannot render.** That includes the normal client build started with `-nullrhi`.
+- A mod that kept its GPU work behind `FPlatformProperties::IsServerOnly()` crashed the packaged game started with `-nullrhi`, in the first frame after a save was loaded, twice in a row: `RenderTarget->GameThread_GetRenderTargetResource()` returned null on the game thread, the null pointer was captured by an `ENQUEUE_RENDER_COMMAND` lambda, and the render thread died in `Resource->GetRenderTargetTexture()`. `IsServerOnly()` is a constant of the server build, so in the client build it is false whatever the command line says. The snippet above takes `Res` the same way and does not check it.
+- **[source]** The engine creates a texture's resource only `if (FApp::CanEverRender() && …)` (`UTexture::UpdateResourceWithParams`, `<UE-CSS>/Engine/Source/Runtime/Engine/Private/Texture.cpp`), and `FApp::CanEverRender()` (`Misc/App.h`) is false on a dedicated server, in a commandlet and with `-nullrhi`.
+- **[source]** The address in the crash, 0x50, is the offset of the `FRenderTarget` part inside `FTextureRenderTargetResource` in a Shipping build (its vtable pointer is read for the virtual call). So an access violation reading 0x50 on top of a render command points to a null render target resource, not to a null RHI texture inside it.
+- **[source]** Skip GPU work (render commands, `ReadPixels`, your own `FCanvas`) when `FApp::CanEverRender()` is false, instead of when `IsServerOnly()` is true: under `UE_SERVER` it is a constant `false`, so the one check covers the dedicated server too. Not built or tested yet.
+- **[source]** Engine functions that check the resource themselves and need no guard: `UKismetRenderingLibrary::ClearRenderTarget2D` and `UTextureRenderTarget2D::UpdateResourceImmediate` (both test `GetResource()`), and `FCanvas::Construct`, which accepts a null render target. `FRenderTarget::ReadPixels` and `FDeferredUpdateResource::FlushDeferredResourceUpdate` do not.
+- The game itself does not run without a renderer either: with `-nullrhi` the packaged client died in its own code about 10 s after a load (`references/testing-publishing.md`, "Launching the game for tests").
+- Evidence: `[frame 1] LogWindows: Error: Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x0000000000000050`, with the mod's render command lambda on top of the call stack, under `TGraphTask<TEnqueueUniqueRenderCommandType<…>>` and `RenderingThreadMain()`. (2026-10-03, game 502094, SML 3.12.0)
+
 **Drawing in batches instead of `DrawItem`**
 - Get a batch: `FBatchedElements& B = *Canvas->GetBatchedElements(FCanvas::ET_Triangle, nullptr, Texture, SE_BLEND_AlphaBlend);`.
 - Add `B.AddVertexf(FVector4f{x, y, 0, 1}, FVector2f{u, v}, Color, FHitProxyId{})` and `B.AddTriangle(v0, v1, v2, Texture, SE_BLEND_AlphaBlend)`.

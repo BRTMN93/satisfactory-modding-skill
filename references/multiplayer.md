@@ -7,6 +7,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 **Who is who**
 - Client: `GetWorld()->IsNetMode(NM_Client)`.
 - Dedicated server: `FPlatformProperties::IsServerOnly()` or `IsRunningDedicatedServer()`. Wrap rendering code in `#if !UE_SERVER`.
+  - `IsServerOnly()` is a constant of the server build, so it is false in the client build even when the client runs without a renderer (`-nullrhi`). **[source]** GPU work that also runs on the client should check `FApp::CanEverRender()` (`references/rendering-ui.md`, "A render target (any texture) has no resource when the game cannot render").
 - Authority: `HasAuthority()`.
 
 **The client does not have distant buildings**
