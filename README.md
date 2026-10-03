@@ -24,6 +24,16 @@ Modding knowledge goes stale with every game, SML and engine update, so the skil
 
 The full procedure is in [`references/learning.md`](references/learning.md). The loop only runs in sessions where the skill is active.
 
+### Recommended setup: a dedicated chat for the skill
+
+If you mod across several chats at once (Claude Code desktop app, same computer), keep one separate chat just for the skill:
+
+- **The working chats record, the skill chat folds.** Each modding chat has the evidence fresh, so it writes its own entries to `learned/findings.md`. When it is done it sends the skill chat a short message ("fold the findings inbox") instead of editing the reference files itself.
+- **The skill chat does only the folding:** it moves the entries into the reference files, runs `scripts/check-private.ps1`, reviews the diff and commits locally. That is mechanical work, so a mid-size model at medium effort (for example Sonnet, medium) is enough and costs little. Your working chats keep their context and their stronger model for the actual modding.
+- **One chat edits the skill,** so two chats never fold into the same files or commit over each other.
+- Give the skill chat a fixed name (for example `Skill - satisfactory-modding`) and keep it open, because the other chats find it by that name. Putting the chats in the same sidebar group is only for your own overview.
+- Pushing and pull requests stay your call: the skill chat does it only when you tell it to in that chat.
+
 ## Your private settings
 
 Create a `local/` folder in the skill (it is ignored by git):
