@@ -82,3 +82,10 @@ The easiest way is to let the skill do it: say yes when it offers a pull request
 The owner of the repository can ask the skill chat to merge the users' pull requests into a new version: it checks each one (markers, evidence, versions, privacy, contradictions), merges the accepted ones locally and reports; pushing stays the owner's decision (`references/learning.md`, section 8).
 
 By hand: fork, edit the files in `references/` (or add entries to `learned/findings.md`), keep the markers honest, and say in the pull request what you tested, how and on which game changelist, SML and engine version.
+
+## Contributors
+
+- [BRTMN93](https://github.com/BRTMN93): author and maintainer.
+- [Claude](https://claude.com/claude-code) (Anthropic): co-author. Wrote and folded most of the findings, the procedures in `references/learning.md` and the scripts, working in the author's sessions.
+
+Everyone whose findings are merged is thanked in the commit text.
