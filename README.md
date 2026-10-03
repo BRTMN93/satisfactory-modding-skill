@@ -2,7 +2,7 @@
 
 A [Claude Code](https://claude.com/claude-code) skill for modding Satisfactory 1.x: Unreal Engine 5.6.1-CSS, Satisfactory Mod Loader (SML) 3.12, C++ and Blueprints.
 
-It covers setting up the environment, mod structure, SML modules and hooks, config, multiplayer, packaging with Alpakit or RunUAT, installing and debugging in the game, performance, rendering, testing and publishing on ficsit.app. Every statement carries a marker: verified in the packaged game, read from source only (**[source]**), or uncertain (**[?]**).
+It covers setting up the environment, mod structure, SML modules and hooks, config, multiplayer, packaging with Alpakit or RunUAT, installing and debugging in the game, performance, rendering, railways (trains, timetables, stations, signals and blocks, routes given to the autopilot), testing and publishing on ficsit.app. Every statement carries a marker: verified in the packaged game, read from source only (**[source]**), or uncertain (**[?]**).
 
 ## Install
 
