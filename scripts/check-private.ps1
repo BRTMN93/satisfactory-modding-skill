@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 Fails if any line of local/private-strings.txt appears in the skill's publishable files.
-Run before every commit of the skill (references/learning.md, section 6).
+Run before every commit of the skill (references/learning.md, section 7).
 #>
 $root = Split-Path $PSScriptRoot
 $list = Join-Path $root 'local\private-strings.txt'

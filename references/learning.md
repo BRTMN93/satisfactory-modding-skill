@@ -63,7 +63,7 @@ After the answer, write one line at the top of `learned/findings.md`, under the 
 3. If an entry belongs to `SKILL.md` (a rule that prevents a common, costly mistake), keep `SKILL.md` short: one bullet, details in a reference file.
 4. Update the table in `SKILL.md` if a new reference file appeared, and `references/open-questions.md` if a question got answered.
 5. Remove the folded entries from `learned/findings.md`.
-6. Run `scripts/check-private.ps1` (section 6). It must report nothing.
+6. Run `scripts/check-private.ps1` (section 7). It must report nothing.
 7. If the skill folder is a git repository, commit with a plain message that lists what changed ("Add railway timetable findings, correct Wwise branch advice").
 
 ## 5. Pull request to the upstream repository
@@ -81,7 +81,24 @@ Only after the user said yes to option 2 in this session. Pushing and opening a 
    - game changelist, SML version and engine version it was tested on.
 7. Give the user the link. Do not merge, comment or push again without asking.
 
-## 6. Privacy check
+## 6. Updating from upstream and keeping what only you know
+
+The skill is meant to be a self-feeding encyclopedia: every user records findings, folds them, sends them upstream as a pull request, the maintainer merges, and everybody else updates. Knowledge must not vanish at any step, so an update never overwrites a local statement that the upstream does not have.
+
+Offer an update check once per session, in one line, at the start of a modding task, when the skill folder is a git checkout and `local/last-update-check` is missing or older than 7 days. Also do it whenever the user asks. Everything below needs the user's yes first; `git fetch` only reads, but the merge changes files.
+
+1. **Not a git checkout:** nothing can be merged. Tell the user, and offer to set one up: clone the upstream, copy the local changes over, check the diff together.
+2. **Fetch and look:** `git fetch upstream` (otherwise `origin`), then `git log HEAD..<upstream>/main --stat`. Show what is new and wait for the yes. Nothing new: write the date to `local/last-update-check` and stop.
+3. **Secure the local state first.** Commit everything tracked, including an inbox with unfolded entries, as it is. `local/` is ignored and stays untouched. After this commit nothing can be lost.
+4. **Merge, never replace:** `git merge <upstream>/main`. No rebase, no `reset`, no `--force`, no checkout of single files, no dropping of stashes. On a conflict stop, name the files and resolve together with the user:
+   - in `learned/findings.md` keep both sides,
+   - in the reference files keep both statements, unless they are the same fact,
+   - a local statement that has evidence is never dropped without the user's yes.
+5. **Fold the rest of the inbox into the merged text** (section 4). An entry that the upstream already has is a duplicate: drop it and say so. An entry that contradicts the upstream stays in the inbox as a correction, and the user is told, because two claims disagree and one of them needs a new test.
+6. Run `scripts/check-private.ps1` (section 7) and write the date to `local/last-update-check`.
+7. **Show what only this copy knows:** `git diff <upstream>/main -- SKILL.md README.md references scripts`, summed up in a few lines. That is the knowledge that is not in the official skill yet. Offer a pull request (section 5). The local text stays until the maintainer has merged it; after that the next update shows no difference.
+
+## 7. Privacy check
 
 The skill is public. Before any commit:
 
