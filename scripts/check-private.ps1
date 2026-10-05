@@ -19,7 +19,7 @@ $files = Get-ChildItem $root -Recurse -File -Force |
 $extra = @()
 if ($Message) { $extra += [pscustomobject]@{ Name = 'commit message / PR text'; Text = $Message } }
 if ($Range) {
-    $log = (& git -C $root log -p --format=%B $Range 2>&1 | Out-String)
+    $log = (& git -C $root log -p --format=%B $Range -- . ':!scripts/check-private.ps1' 2>&1 | Out-String)
     $extra += [pscustomobject]@{ Name = "commits $Range"; Text = $log }
 }
 
