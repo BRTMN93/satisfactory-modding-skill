@@ -20,6 +20,8 @@ STEP="${WATCH_SECONDS:-30}"
 CAT="${MOD_LOG_CATEGORY:-LogMyMod}"
 TAG="${TEST_TAG:-MYMOD_TEST}"
 sleep "$STEP"
+# The game renames its log when it starts: for a moment there is no log file. Say so and keep the caller's position.
+if [ ! -f "$LOG" ]; then echo "RUN $TEST started ?"; echo "game not started yet"; echo "LINES $FROM $ID"; exit 0; fi
 N=$(wc -l < "$LOG" 2>/dev/null || echo 0)
 NOWID=$(head -n 1 "$LOG" 2>/dev/null | tr -dc "0-9.:-")
 { [ "$N" -lt "$FROM" ] || { [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; }; } && FROM=0
