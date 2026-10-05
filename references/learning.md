@@ -17,7 +17,7 @@ Write to `learned/findings.md` (in this skill's folder) as soon as something is 
 - a measured number (build time, cost of a call, memory) with the hardware or conditions it was measured on.
 
 **Do not record:**
-- design decisions of the user's own mod, project plans, names of unpublished mods,
+- design decisions of the user's own mod, project plans, names of unpublished mods and anything that gives a name away: abbreviations, log categories, test tags, prefixes of log lines (write `<Mod>`, `LogMyMod`, `MYMOD_TEST`). `scripts/check-private.ps1` only finds what is in `local/private-strings.txt`, so list such abbreviations there too,
 - personal data: names, e-mail addresses, Steam IDs, save names, absolute paths with user names (use `<Game>`, `<Project>`, `<UE-CSS>`, `%LOCALAPPDATA%`),
 - anything already in the skill. Search first (`grep -ri <keyword>` over the skill folder). If the skill has it but less precisely, record a correction instead of a duplicate,
 - guesses without a marker,
