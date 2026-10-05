@@ -40,7 +40,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
    - The root is a Blueprint child (`RootInstance_<Mod>`, `RootGameWorld_<Mod>`) with `bRootModule` ticked.
    - The C++ class does not set this flag. Otherwise the child inherits it, two roots appear and the game stops with a Fatal error.
 3. **A hook fires for every instance in every world.**
-   - The first line of the handler filters to your object and lets everything else through via `Scope(...)`. A global hook without a filter once took a dozen GB of VRAM from the game.
+   - The first line of the handler filters to your object and lets everything else through via `Scope(...)`. A global hook without a filter once took 16 GB of VRAM from the game.
    - Install hooks in `POST_INITIALIZATION`, inside `if (!WITH_EDITOR)`.
    - In "after" hooks of functions with a return value, the result is the first argument.
 4. **Buildables are actors and lightweight.** Foundations, walls and similar are not actors but data in `AFGLightweightBuildableSubsystem`. Code that looks only at `GetAllBuildablesRef()` misses most buildables.

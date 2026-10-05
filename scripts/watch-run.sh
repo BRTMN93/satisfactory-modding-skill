@@ -30,7 +30,7 @@ PROBLEMS=$(echo "$NEW" | grep -E "$TAG (FAILED|RESULT)|$TAG .*FAILED|$CAT: (Erro
   | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | awk '!seen[$0]++' | head -10)
 if [ -n "$PROBLEMS" ]; then echo "$PROBLEMS"; fi
 if ! echo "$NEW" | grep -q "$TAG"; then echo "no new step for $STEP s"; fi
-if ! tasklist 2>/dev/null | grep -qi "FactoryGameSteam-Win64"; then
+if ! tasklist 2>/dev/null | grep -Eqi "FactoryGame(Steam|EGS)-Win64"; then
   # No game and nothing new in the log: the run is still packaging or starting
   if [ "$N" -gt "$FROM" ]; then echo "GAME CLOSED, watch over"; else echo "game not started yet"; fi
 fi
