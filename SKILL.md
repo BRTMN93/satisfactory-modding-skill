@@ -19,7 +19,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Buildables (actors and lightweight), factories, saves, managers, map | `references/game-classes.md` |
 | Packaging, installing, SMM, logs, crashes, VRAM | `references/build-install-debug.md` |
 | Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md` |
-| Render targets, FCanvas, drawing in batches, PNG export, UI injection | `references/rendering-ui.md` |
+| UI injection into game windows, widget hooks from C++, popups, searchable lists | `references/ui.md` |
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
 | Tests, release checklist, ficsit.app, licences, pull requests to other people's mods | `references/testing-publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
@@ -31,6 +31,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Domain | Folder | Open it when the mod deals with |
 |---|---|---|
 | railroad | `domains/railroad/` | trains, timetables, stations, platforms, tracks, signals, blocks, routes |
+| rendering | `domains/rendering/` | drawing into textures: render targets, FCanvas, batches, PNG export (maps, charts, previews) |
 
 `learned/findings.md` holds the core findings that are not folded into the references yet, and `learned/<domain>.md` those of a domain. Check the core inbox and the inbox of every domain the task touches, when a topic comes up.
 

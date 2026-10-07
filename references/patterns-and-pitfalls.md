@@ -23,7 +23,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 9. **Uninitialized fields.** Initialize them in the class declaration.
 10. **Parallel index structures** (e.g. a redirect from a quadtree to a data array): update them on **every** insert and delete, including elements you do not index. Otherwise the indexes drift apart by one.
 11. **Coroutine handle overwritten.** A coroutine runs synchronously up to its first suspension, so a nested one started in the middle can be overwritten by the outer one's already finished handle. Store the handle only when `!IsDone()`.
-12. **Shared engine resources.** `BeginDrawCanvasToRenderTarget` hands out the world canvas, shared by everyone. Holding it across many frames breaks drawing for you and for others. Make your own (section 13 (`references/rendering-ui.md`)).
+12. **Shared engine resources.** `BeginDrawCanvasToRenderTarget` hands out the world canvas, shared by everyone. Holding it across many frames breaks drawing for you and for others. Make your own (`domains/rendering/render-targets.md`, "Your own canvas").
 13. **Cache keys.**
     - Compute them from the content: a rounded hash of the data used + settings + mod versions.
     - Do not base them on the date or file size, because autosaves rotate through slots and saves get copied.
