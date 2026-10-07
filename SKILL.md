@@ -86,7 +86,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
 8. **Install with the game closed and into the right folder.** A game feature mod goes to `FactoryGame\Mods\GameFeatures\<Mod>`. In the wrong folder the C++ runs but the asset paks do not mount.
 9. **Shadowed names are compile errors** (`C4456`, `C4458`, because UHT runs with `-WarningsAsErrors`). Packaging takes minutes, so group changes before a build.
 10. **Measure instead of guessing.** Log the duration of work phases, measure the VRAM of the game process alone (`scripts/vram.ps1`) and do the three-loads test: load the save three times in a row, returning to the menu in between. One run is a hint, not a statistic.
-11. **Back up the saves before testing.** A copy of a save keeps the session name, so autosaves during tests overwrite the original's slots.
+11. **Copy anything outside your project before you touch it, and put it back afterwards:** saves, `GameUserSettings.ini`, SMM profiles (`%APPDATA%\ficsit\profiles.json`), the game's `Mods` folder. A copy of a save keeps the session name, so autosaves during tests overwrite the original's slots; test window sizes stay in `GameUserSettings.ini` (`references/testing.md`).
 12. **Multiplayer:** the client (`IsNetMode(NM_Client)`) and the dedicated server (`FPlatformProperties::IsServerOnly()`) can do different things than the host. Do not change the RPC format without need; then different mod versions can play together.
 13. **Keep a backup of a working build outside the game folder,** with a note on how to restore it. A game or SMM update can remove or disable a self-built mod.
 
