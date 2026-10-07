@@ -2,7 +2,18 @@
 
 A [Claude Code](https://claude.com/claude-code) skill for modding Satisfactory 1.x: Unreal Engine 5.6.1-CSS, Satisfactory Mod Loader (SML) 3.12, C++ and Blueprints.
 
-It covers setting up the environment, mod structure, SML modules and hooks, config, multiplayer, packaging with Alpakit or RunUAT, installing and debugging in the game, performance, rendering, railways (trains, timetables, stations, signals and blocks, routes given to the autopilot), testing and publishing on ficsit.app. Every statement carries a marker: verified in the packaged game, read from source only (**[source]**), or uncertain (**[?]**).
+It is a self-feeding encyclopedia in two layers:
+
+- **Core (`references/`):** what any mod can need: setting up the environment, mod structure, SML modules, hooks and config, game classes, UI injection into the game's windows, multiplayer, packaging with Alpakit or RunUAT, installing and debugging in the game, performance, testing, test automation and publishing on ficsit.app. `SKILL.md` has the rules that prevent the most common mistakes and a symptom index ("the mod is missing from the list, what to look at first").
+- **Domains (`domains/<name>/`):** topics only some mods touch, each with an index and its own inbox. Today: `domains/railroad/` (trains, timetables, stations, signals and blocks, routes given to the autopilot, the game's railway windows, test layouts) and `domains/rendering/` (render targets, canvas, PNG export). Claude opens a domain only when the task deals with it.
+
+Every statement carries a marker: verified in the packaged game (no marker), read from source only (**[source]**), or uncertain (**[?]**).
+
+Scripts: `scripts/doctor.ps1` finds the game, the engine and the SML version and warns when they differ from what the skill was verified on, `scripts/check-private.ps1` checks files, commit messages and commits about to be pushed for private data, `scripts/lint-skill.ps1` checks the skill's own structure and links, `scripts/watch-run.sh` and `scripts/watcher-prompt.md` watch automated test runs, `scripts/package-and-install.ps1` packages and installs a mod. `evals/evals.json` holds eight dry-run tasks that check that the skill still sends Claude to the right files.
+
+## Versions
+
+A released state of the skill is a tag `v<yyyy>.<mm>.<dd>` (for example `v2026.10.07`), set by the maintainer when new work is pushed. The skill's own update (see below) takes the newest tag, so you never get half-reviewed work from between two releases; without tags it takes `main`. The game, SML and engine versions the content was verified on are in `SKILL.md` ("Verified on"). `git tag -l` lists the releases.
 
 ## Install
 
