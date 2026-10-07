@@ -7,6 +7,20 @@ description: Knowledge and procedures for creating, fixing, building, testing an
 
 Verified on: game 1.x (changelist 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SML 3.12.0, Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
 
+## Symptom index
+
+| Symptom | Look first |
+|---|---|
+| Crash at start or while loading a save | `CrashContext.runtime-xml` ("Diagnosis" below); two root modules (rule 2); a hook without a filter (rule 3) |
+| The mod is missing from the mod list | `LogSatisfactoryModLoader: Display: <Mod>` in the log; the install folder (rule 8); `GameVersion` and the SML dependency in `.uplugin` (`references/mod-structure.md`) |
+| C++ works, assets or Blueprints are missing | `LogPakFile: Mounted Pak file` for the mod; the install folder (rule 8) |
+| A hook or a change has no effect | tested in the editor (rule 1); `Successfully hooked` in the log; hooks installed in `POST_INITIALIZATION` (rule 3) |
+| Installing fails: "Permission denied", "Close the game first" | the game still runs or hangs on exit (`references/testing.md`, "A game that hangs on exit") |
+| The self-built mod is gone or replaced | SMM or a game update (rule 13; `references/build-install-debug.md`, "Adding the same mod in SMM overwrites your version") |
+| A game started by a script sits in the menu, the log is `FactoryGame_2.log` | `steam_appid.txt` (`references/testing.md`, "Launching the game for tests") |
+| Compile errors `C4456`/`C4458`, unknown game classes or members | rule 9; the headers' changelist against the game's (`scripts/doctor.ps1`) |
+| Memory or VRAM grows, hitches | rules 3, 5, 6 and 10; `scripts/vram.ps1` |
+
 ## How to use
 
 This file holds the rules and procedures needed in almost every modding task. Read the details in `references/` only when the topic comes up:
