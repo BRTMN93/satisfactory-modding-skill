@@ -49,3 +49,4 @@ foreach ($name in $generic.Keys) {
 
 if ($hits) { $hits; Write-Host "Private data found, do not commit or push"; exit 1 }
 Write-Host 'Clean'
+exit 0

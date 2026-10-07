@@ -29,6 +29,11 @@ NOWID=$(head -n 1 "$LOG" 2>/dev/null | tr -dc "0-9.:-")
 { [ "$N" -lt "$FROM" ] || { [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; }; } && FROM=0
 STARTED=$(grep -m1 "$TAG" "$LOG" 2>/dev/null | sed -E 's/^\[([^]]*)\].*/\1/')
 echo "RUN $TEST started ${STARTED:-?}"
+# A new log: the run that was watched may have ended in the renamed one (a queue starts the next game at once)
+if [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; then
+  B=$(ls -t "$(dirname "$LOG")"/FactoryGame-backup-*.log 2>/dev/null | head -n 1)
+  [ -n "$B" ] && grep -E "$TAG RESULT|RESULT (PASS|FAIL|CRASH|TIMEOUT)" "$B" | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | tail -n 3 | sed 's/^/previous log: /'
+fi
 NEW=$(tail -n +"$((FROM + 1))" "$LOG" 2>/dev/null | head -n "$((N - FROM))")
 PROBLEMS=$(echo "$NEW" | grep -E "$TAG (FAILED|RESULT)|$TAG .*FAILED|$CAT: (Error|Warning)|Fatal error|Unhandled Exception|RESULT (PASS|FAIL|CRASH|TIMEOUT)" \
   | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | awk '!seen[$0]++' | head -10)
