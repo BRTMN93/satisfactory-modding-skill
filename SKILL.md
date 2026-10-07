@@ -26,7 +26,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Open questions | `references/open-questions.md` |
 | Recording findings, folding them in, pull requests to this skill | `references/learning.md` |
 
-**Domains.** A topic that only some mods need lives in its own folder `domains/<name>/`, not in `references/`. Open a domain's files only when the task touches its topic: a mod about something else never reads them, so they cost it nothing. Which category a fact belongs to is decided in `references/learning.md`, section 1.
+**Domains.** A topic that only some mods need lives in its own folder `domains/<name>/`, not in `references/`. Open a domain's files only when the task touches its topic: a mod about something else never reads them, so they cost it nothing. Start with the domain's index `domains/<name>/README.md`, which names the file for each topic, and open only that file. Which category a fact belongs to is decided in `references/learning.md`, section 1.
 
 | Domain | Folder | Open it when the mod deals with |
 |---|---|---|
