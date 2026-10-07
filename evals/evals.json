@@ -1,0 +1,86 @@
+{
+  "skill_name": "satisfactory-modding",
+  "how_to_run": "Dry run, one fresh agent per eval: give it the skill folder and the prompt below the line 'Dry run: do not edit, create or run anything. Say which files of the skill you would read, in order, and what you would write where. At most 12 lines.' Then compare the answer with the expectations. Run after every change to SKILL.md, references/learning.md, references/upstream.md or the folder layout; scripts/lint-skill.ps1 checks the structure, these check the behaviour.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I am writing a mod that adds a new production building which counts the items going through it and shows the count in its window. Where do I start?",
+      "expected_output": "Uses the core only: SKILL.md, then references such as game-classes.md, ui.md, sml-api.md, mod-structure.md.",
+      "expectations": [
+        "Does not open any file under domains/railroad/",
+        "Does not open any file under domains/rendering/",
+        "Names at least one of references/game-classes.md, references/ui.md, references/sml-api.md"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "While testing my train mod I found that a train waiting at <station A> leaves 2 s later when its timetable stop is set to 0 s than when it is set to 1 s. Logs prove it. Record it for the skill.",
+      "expected_output": "An entry in learned/railroad.md under a heading naming a railroad file (e.g. ## domains/railroad/timetable-docking.md), with evidence, date and versions, placeholders instead of project names.",
+      "expectations": [
+        "Writes to learned/railroad.md, not to learned/findings.md",
+        "Puts the entry under a heading of the form ## domains/railroad/<file>.md",
+        "Keeps the evidence, a date and versions in the entry, and uses <station A> rather than a real station name",
+        "Does not edit files in domains/ or references/ directly"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Working on my train mod I found that SUBSCRIBE_METHOD on a static member function of any game struct gives a handler without a Self argument, and I confirmed it on a non-railway class too. Record it.",
+      "expected_output": "Core entry in learned/findings.md under ## references/sml-api.md, because any mod could need it.",
+      "expectations": [
+        "Applies the category question (would a mod about something unrelated need it?) and answers yes",
+        "Writes to learned/findings.md under ## references/sml-api.md, not to learned/railroad.md"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "My mod's game crashes right at start with a Fatal error about two root modules. What do I check?",
+      "expected_output": "Symptom index -> rule 2: the C++ class must not set bRootModule; only the Blueprint child is the root.",
+      "expectations": [
+        "Uses the symptom index or rule 2 of SKILL.md",
+        "Says the bRootModule flag belongs on the Blueprint child only, not on the C++ class"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I want to draw a map of my factory into a texture and save it as PNG.",
+      "expected_output": "Opens domains/rendering/README.md, then domains/rendering/render-targets.md; not the railroad domain.",
+      "expectations": [
+        "Opens domains/rendering/ (README.md or render-targets.md)",
+        "Does not open domains/railroad/"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "This is the third finding today about the power grid (fuses, power shards, generators); the first two are already in the core inbox under '## New domain: power'. Fold the inbox, I said yes.",
+      "expected_output": "Creates domains/power/ with a README.md index, a row in the SKILL.md domain table, the inbox learned/power.md, moves the entries there or folds them in, tells the user a domain was created.",
+      "expectations": [
+        "Creates domains/power/ with an index README.md",
+        "Adds a row for power to the domain table in SKILL.md",
+        "Creates learned/power.md or folds the entries straight in",
+        "Runs scripts/check-private.ps1 before the commit and tells the user a domain was created"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Update the skill from upstream.",
+      "expected_output": "references/upstream.md section 2: find the upstream remote, fetch with tags, target = newest release tag or main, show what is new and wait for yes, commit the local state first, merge (never replace), fold the inbox, check-private, list what only this copy knows.",
+      "expectations": [
+        "Opens references/upstream.md",
+        "Takes the newest release tag, or main when there is none",
+        "Commits the local state before the merge and merges instead of resetting",
+        "Asks for the user's yes before the merge and does not push"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "scripts/doctor.ps1 says: WARNING: game changelist 510000, the skill is verified on 502094. I want to use the skill's advice on hooking AFGHUD::OpenInteractUI.",
+      "expected_output": "Re-checks the statements the task depends on against the current headers or in the packaged game before relying on them (references/learning.md, section 2), and records the result (new date and versions, or a correction).",
+      "expectations": [
+        "Treats the advice as needing a re-check because the versions differ",
+        "Checks the current headers or tests in the packaged game before relying on it",
+        "Records the outcome in the inbox (confirmation with new versions, or a correction)"
+      ]
+    }
+  ]
+}
