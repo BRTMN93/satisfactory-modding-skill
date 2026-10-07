@@ -39,3 +39,6 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - A PR that depends on a previous one targets the author's default branch and contains the previous one's commits. Write in the description "Stacked on #N, only the last commit is new".
 - Mod repositories usually have no CI, so **test evidence goes into the PR description**: the engine tag, the game changelist, the build target, the save size, the measured numbers and what you did not test.
 - Describe other people's findings that you carry over in the commit ("Thanks to X for finding this, see X/Repo@sha"). This does not make them co-authors.
+
+## Your own mod's repository
+- **Before the first push, scan the repository's whole history for absolute paths with a user name and for the AI tool's local folders** (for example a path into the user's profile that a test script used to find a packaging script). Committed scripts take such paths from a parameter or an environment variable. A path found after the push needs a rewrite of the history. Evidence: a mod repository's history was rewritten before its first push to remove such paths from every commit. (2026-10-03, game 502094, SML 3.12.0)
