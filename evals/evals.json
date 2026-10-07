@@ -26,10 +26,11 @@
     {
       "id": 3,
       "prompt": "Working on my train mod I found that SUBSCRIBE_METHOD on a static member function of any game struct gives a handler without a Self argument, and I confirmed it on a non-railway class too. Record it.",
-      "expected_output": "Core entry in learned/findings.md under ## references/sml-api.md, because any mod could need it.",
+      "expected_output": "Treated as core, because any mod could need it. The skill already states it in references/sml-api.md (verified on a railway function), so the session records only the new part, the confirmation on a non-railway class, in learned/findings.md under ## references/sml-api.md, or says it is already covered.",
       "expectations": [
         "Applies the category question (would a mod about something unrelated need it?) and answers yes",
-        "Writes to learned/findings.md under ## references/sml-api.md, not to learned/railroad.md"
+        "Does not write to learned/railroad.md",
+        "Notices that references/sml-api.md already has the statement and does not add a duplicate"
       ]
     },
     {
