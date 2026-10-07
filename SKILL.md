@@ -26,7 +26,8 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
 | Open questions | `references/open-questions.md` |
-| Recording findings, folding them in, pull requests to this skill | `references/learning.md` |
+| Recording findings, the inboxes, folding them in, privacy check | `references/learning.md` |
+| Pull requests to this skill, updating from upstream, merging contributions (maintainer) | `references/upstream.md` |
 
 **Domains.** A topic that only some mods need lives in its own folder `domains/<name>/`, not in `references/`. Open a domain's files only when the task touches its topic: a mod about something else never reads them, so they cost it nothing. Start with the domain's index `domains/<name>/README.md`, which names the file for each topic, and open only that file. Which category a fact belongs to is decided in `references/learning.md`, section 1.
 
@@ -124,6 +125,6 @@ The game, SML and the engine change, and this skill only stays useful if what ea
 
 - **While you work:** as soon as you establish something the skill does not have, find that the skill is wrong, or test a **[source]**/**[?]** claim, add an entry to the inbox of its category (core: `learned/findings.md`, a domain: `learned/<domain>.md`, see `references/learning.md`, section 1) with its marker, evidence, date and versions. Tell the user in one line. Search the skill first so you do not duplicate it. Leave out project decisions and anything personal.
 - **When a modding task is done:** if 5 or more entries are waiting, or a correction of an unmarked statement, or an entry that prevents a crash or data loss, ask the user once: fold the findings into the skill, fold them and open a pull request to the skill's upstream repository, or not now.
-- **Updating:** at the start of a modding task, once per session, offer in one line to check the upstream for a newer skill (details and when: `references/learning.md`, section 6). An update commits the local state first and then merges; it never overwrites local knowledge that the upstream lacks, and it ends with a list of what only this copy knows, offered as a pull request.
-- **Maintainer:** the repository's owner can ask to merge the users' pull requests into a new version (`references/learning.md`, section 8; the owner is named in `local/user.md`).
+- **Updating:** at the start of a modding task, once per session, offer in one line to check the upstream for a newer skill (details and when: `references/upstream.md`, section 2). An update commits the local state first and then merges; it never overwrites local knowledge that the upstream lacks, and it ends with a list of what only this copy knows, offered as a pull request.
+- **Maintainer:** the repository's owner can ask to merge the users' pull requests into a new version (`references/upstream.md`, section 3; the owner is named in `local/user.md`).
 - **Publishing needs consent.** Push and pull request only after the user says yes in this session. Run `scripts/check-private.ps1` before every commit.

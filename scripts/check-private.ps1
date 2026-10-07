@@ -3,7 +3,7 @@
 Fails if the skill's publishable files (or a commit message, or the commits about to be pushed) contain private data.
 Checks every line of local/private-strings.txt and a set of generic patterns (path with a user
 name, e-mail address, Steam ID, IPv4 address, access token). It reports; nothing runs it for you,
-so run it before every commit and every push (references/learning.md, section 7).
+so run it before every commit and every push (references/learning.md, section 5).
 .PARAMETER Message
 Optional text to check as well: a commit message, or the title and body of a pull request.
 .PARAMETER Range
@@ -31,7 +31,7 @@ if (Test-Path $list) {
         foreach ($e in $extra) { if ($e.Text.IndexOf($n, [StringComparison]::OrdinalIgnoreCase) -ge 0) { $hits += "$($e.Name): your private string" } }
     }
 } else {
-    Write-Warning "No ${list}: only the generic patterns are checked. Create it with your own private strings (references/learning.md, section 7)."
+    Write-Warning "No ${list}: only the generic patterns are checked. Create it with your own private strings (references/learning.md, section 5)."
 }
 
 $generic = [ordered]@{
