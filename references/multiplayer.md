@@ -2,7 +2,7 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 14. Multiplayer and dedicated server
+## Multiplayer and dedicated server
 
 **Who is who**
 - Client: `GetWorld()->IsNetMode(NM_Client)`.

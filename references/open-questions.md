@@ -2,7 +2,7 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 20. Uncertain / to verify
+## Uncertain / to verify
 
 - Requirements for a ficsit.app package: Steam and EGS, servers.
 - Whether `-Target=` is an official `PackagePlugin` option. It worked for me.

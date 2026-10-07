@@ -2,7 +2,7 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 7. Useful game classes
+## Useful game classes
 
 ### Buildings: actors and lightweight
 This is the most important thing to remember.

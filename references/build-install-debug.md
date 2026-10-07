@@ -2,7 +2,7 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 8. Build and packaging
+## Build and packaging
 
 Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling it directly is faster:
 ```powershell
@@ -13,7 +13,7 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 
 **Flags**
 - Without `-Target` it builds both targets, `FactoryGameEGS` and `FactoryGameSteam`. `-Target=FactoryGameSteam` halves local test time.
-- Servers: `-server -serverplatform=Win64+Linux`. Linux needs the toolchain from section 2.7 (`references/setup.md`).
+- Servers: `-server -serverplatform=Win64+Linux`. Linux needs the toolchain from `references/setup.md`, "Linux toolchain".
 
 **Checks in the Shipping build**
 - **[source]** Mod code is compiled with checks active in the Shipping build. The starter project's `Source/FactoryShared.Target.cs` sets `bUseChecksInShipping = UseChecksInShippingOverride`, which is `true` by default (`// MODDING EDIT: we want checks in shipping by default`), and the packaging log says `Building with command line overrides: ChecksInShipping: True (default: false); LinkType: Modular`. So a failed `check()` in a mod stops the packaged game.
@@ -46,7 +46,7 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 
 **One copy of the sources.** If you have several copies (working directory, build project, git clone), sync them and check with `diff -rq --strip-trailing-cr`. Before a commit or PR, make sure the repo has exactly the code you built and tested.
 
-## 9. Installing in the game, SMM, backups
+## Installing in the game, SMM, backups
 
 **The game must be closed.** A running game locks the DLL, and copying ends with "Permission denied". Check with: `tasklist | findstr FactoryGame`.
 
@@ -73,7 +73,7 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - Restore with the game closed. Do not add this mod in SMM.
 - A game update can disable the mod through `GameVersion`.
 
-## 10. Running, logs, crashes, measurements
+## Running, logs, crashes, measurements
 
 **Game log:** `%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log`.
 - Shipping writes Display, Warning and Error lines.

@@ -2,7 +2,7 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 4. SML: modules and lifecycle
+## SML: modules and lifecycle
 
 **Module types**
 - `UGameInstanceModule`: one per game instance, lives through all worlds. Also runs on a dedicated server.
@@ -68,7 +68,7 @@ void UMyGameInstanceModule::DispatchLifecycleEvent(ELifecyclePhase Phase) {
 // Then a Blueprint RootInstance_MyMod with bRootModule=true and the arrays filled in.
 ```
 
-## 5. SML: hooks
+## SML: hooks
 
 Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateHandle`.
 
@@ -164,9 +164,9 @@ SUBSCRIBE_METHOD(FCanvas::GetBatchedElements, [](auto& Scope, FCanvas* Self, /* 
 - **Trap:** a hook on one path does not catch the others. Example: closing the map with its key bypasses `Widget_MapContainer::CloseMap`, so you also have to listen for the widget's destruction or hiding.
 - You can find the names of the game's Blueprint functions and variables in the `.uasset` stubs from the starter project: extract strings matching `[\x20-\x7e]{5,}` from the bytes.
 
-## 6. SML: config, subsystems, networking, commands, content, tools
+## SML: config, subsystems, networking, commands, content, tools
 
-### 6.1 Config
+### Config
 - **Creating:** a Blueprint child of `UModConfiguration` with `FConfigId{ModReference, Category}`.
   - Properties: `UConfigPropertyBool`, `Float`, `Integer`, `String`, `Class`, `Array`, `Section`.
   - Flags: `bRequiresWorldReload` only restricts the UI to the menu, `bHidden`, `bAllowUserReset`.
@@ -191,7 +191,7 @@ const UConfigPropertySection* Root = CM->GetConfigurationRootSection(FConfigId{"
 if (auto* P = Cast<UConfigPropertyFloat>(Root->SectionProperties.FindRef(TEXT("Speed")))) { P->Value = 2.f; P->MarkDirty(); }
 ```
 
-### 6.2 Subsystems
+### Subsystems
 - `AModSubsystem : AFGSubsystem` with the `ReplicationPolicy` field:
   - `SpawnOnServer`, `SpawnOnServer_Replicate`: everywhere except `NM_Client`,
   - `SpawnOnClient`: everywhere except a dedicated server,
@@ -208,7 +208,7 @@ if (auto* P = Cast<UConfigPropertyFloat>(Root->SectionProperties.FindRef(TEXT("S
 - `PreSaveGame` fires on every save, also on saves made from code, while `ShouldSave` returns true. With `return DataVersion != 0;` an empty subsystem stays out of the save entirely (no `PreSaveGame` call). Do that in a mod players may install without using: a game saved with the mod installed then carries no trace of it.
 - What a save without the mod does to this data: see "Saves" in `game-classes.md`.
 
-### 6.3 Networking: client ↔ server RPC (Remote Call Object)
+### Networking: client ↔ server RPC (Remote Call Object)
 - `UFGRemoteCallObject` with `Within=FGPlayerController`, one per player.
 - Functions: `UFUNCTION(Server, Reliable)` from client to server and `UFUNCTION(Client, Reliable)` from the server to that one client.
 - Every RCO needs a dummy replicated property and `GetLifetimeReplicatedProps`.
@@ -227,27 +227,27 @@ protected: UPROPERTY(Replicated) bool bDummy = true;
 // call: if (auto* R = PC->GetRemoteCallObjectOfClass<UMyRCO>()) R->ServerDo(1);
 ```
 
-### 6.4 Chat commands [source]
+### Chat commands [source]
 - Class: a subclass of `AChatCommandInstance`. In the constructor set `CommandName`, `Aliases`, `Usage`, `MinNumberOfArguments`, `bOnlyUsableByPlayer`.
 - Logic: override `ExecuteCommand_Implementation(UCommandSender*, const TArray<FString>&, const FString&)`, which returns `EExecutionStatus`.
 - Registration: `mChatCommands`, server only, or `AChatCommandSubsystem::Get(World)->RegisterCommand(ModRef, Class)`.
 
-### 6.5 Console commands
+### Console commands
 - `static FAutoConsoleCommandWithWorldArgsAndOutputDevice X(TEXT("MyMod.Cmd"), TEXT("description"), FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateLambda(...));` works in a Shipping build. Open the console with the `~` key.
 - Write to the console through `Ar.Log` and `Ar.Logf`. `UE_LOG` entries at Display level also show up there.
 
-### 6.6 Content registration [source]
+### Content registration [source]
 - `UModContentRegistry::Get(WorldContext)`: `RegisterSchematic`, `RegisterResearchTree`, `RegisterRecipe`, `RegisterResourceSinkItemPointTable` and the `GetRegistered*` queries.
 - Items are not registered. They bind themselves through registered schematics and research trees. The simplest way is to put them in `mSchematics` and `mResearchTrees` on the world module.
 - The registries close at the world's BeginPlay, so register in `INITIALIZATION` at the latest.
 - A new building consists of a building Blueprint, a building descriptor and a recipe unlocked by a schematic. An example is in ExampleMod.
 - Tags: `UContentTagRegistry`.
 
-### 6.7 Other useful things from SML
+### Other useful things from SML
 - `UModLoadingLibrary`: `IsModLoaded`, `GetLoadedMods()` returns `TArray<FModInfo>{Name, Version}` (good as part of a cache key), `GetModLoaderVersion`.
 - `UBlueprintAssetHelperLibrary::FindPluginNameByObjectPath`: which mod a given asset belongs to.
 - `FReflectionHelper::GetPropertyValue`, `SetPropertyValue`, `CallScriptFunction`: access any property by name. Alternative in plain UE: `FindPropertyByName` + `ContainerPtrToValuePtr` and `CallFunctionByNameWithArguments`.
-- Saving your own objects in the save: `IFGSaveInterface` + `UPROPERTY(SaveGame)`, tested on a subsystem (section 6.2). Mod metadata: `UFGSaveSession::SetModMetadata` and `GetModMetadata` [source].
+- Saving your own objects in the save: `IFGSaveInterface` + `UPROPERTY(SaveGame)`, tested on a subsystem ("Subsystems" above). Mod metadata: `UFGSaveSession::SetModMetadata` and `GetModMetadata` [source].
 - SML console variables:
   - `SML.SkipModCompatibilityCheck`
   - `SML.ForceAllowCheats`

@@ -2,7 +2,7 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 17. Tools and scripts
+## Tools and scripts
 
 **Following the game log (PowerShell).** Waits for the game, prints new matches and exits together with the game. Handles log rotation.
 ```powershell

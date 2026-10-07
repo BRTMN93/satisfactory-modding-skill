@@ -2,12 +2,12 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 11. Patterns and pitfalls (lessons from real bugs)
+## Patterns and pitfalls (lessons from real bugs)
 
-1. **Global hook without a filter.** See section 5 (`references/sml-api.md`): put the filter on the first line and null the pointers.
+1. **Global hook without a filter.** See `references/sml-api.md`, "SML: hooks": put the filter on the first line and null the pointers.
 2. **O(n²) in bulk loading.** Inserting sorted data still shifted the indexes on every element, which caused a 3-second freeze at 139k elements.
    - Sort once, build the indexes linearly and skip incremental fixes during initialization.
-   - Split long loops with a time budget (section 12).
+   - Split long loops with a time budget ("Coroutines (UE5Coro) and splitting work across frames" below).
 3. **Long work restarted on every change.** Every placed building cancelled the 51-second redraw, so it never finished while building.
    - Queue incremental changes behind the full work in progress. Only a new request for full work cancels the full work.
    - Merge series of events into one batch.
@@ -32,7 +32,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 14. **Measure first, then optimize.** Logs with timings, the same save before and after the change. A single run is only a hint.
     - A single call timed with `FPlatformTime::Cycles64()` on Windows has a resolution of 0.1 µs: two back-to-back reads gave a 0 µs median and every single-call result was a multiple of 0.1 µs (**[?]** consistent with the usual 10 MHz QueryPerformanceCounter). Time a loop of thousands of calls for anything under a microsecond, and time single calls only for the cold-cache distribution.
 15. **The game's `.cpp` files in the starter project are stubs with empty function bodies** (for example `void AFGTrain::TickSelfDriving(float dt){ }`). From the headers you can read what exists, but not how it works. Every assumption about the behaviour of native code needs a short experiment in the packaged game before code is built on it.
-16. **The starter project's headers can be older than the installed game, and that has consequences.** Observed (headers 491125, game 502094, SML 3.12.0): the local `Source/FactoryGame/currentVersion.txt` said 491125, while the game is 502094. Comparing it with the game's changelist is described in section 2.5 (`references/setup.md`). Comparison with the current SML repository showed:
+16. **The starter project's headers can be older than the installed game, and that has consequences.** Observed (headers 491125, game 502094, SML 3.12.0): the local `Source/FactoryGame/currentVersion.txt` said 491125, while the game is 502094. Comparing it with the game's changelist is described in `references/setup.md`, "Starter project". Comparison with the current SML repository showed:
     - The `master` branch of the `satisfactorymodding/SatisfactoryModLoader` repository has the 502094 headers since commit `d2162c9` of 2026-08-12 ("Update headers to CL502094", 76 files). SML stayed at version 3.12.0 through this, and its public headers did not change. So the SML version alone does not tell whether the game headers are up to date.
     - 39 game headers changed (of the 43 railway headers, 40 were identical). In `AFGBuildable`, 6 virtual functions were removed (the old set of build effects), 5 new ones were added, and 3 changed position. Derived classes, including the signal and the switch, now override `OnLegacyBuildEffectFinished` instead of `OnBuildEffectActorFinished`.
     - **[source]** Conclusion: a mod built on old headers has the wrong virtual function table layout for all buildables. Calling a virtual function, hooking a virtual function or a custom class derived from a buildable will land in the wrong place. Non-virtual functions are linked by name, so a mod that uses only those may keep working and notice nothing.
@@ -47,7 +47,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 23. **Walking all actors of a class costs 0.2–0.5 µs per actor, too much for a once-a-second poll on a big save.** `for (TActorIterator<AActor> It(World); It; ++It)` with one `GetFName()` hash per actor took 861 µs and 1452 µs for the 3 874 and 3 752 actors of two small test worlds (0.22 and 0.39 µs each); the same loop over 221 railway actors took 111 µs the first time and 33 µs for 137 actors on another save. At 10 000 pieces that is several milliseconds in one frame, and an actor iterator cannot be split across frames. A cache that must notice built and dismantled pieces should take the buildable subsystem's delegates (entry in `game-classes.md`) and iterate once at start. Evidence: `a loop over all 3874 actors of the world took 860.7 us, 0.222 us an actor`. (2026-10-05, game 502094, SML 3.12.0, i9-12900H)
 24. **[?]** A test scenario driven by a looping `FTimerManager` timer whose callback ends the run (`FPlatformMisc::RequestExit(false, ...)` after logging the result) crashed the game with an access violation inside that same callback in four runs out of about fifteen, always in the frame of the result, after both PASS and FAIL. Returning right after the call that ends the run and checking an "ended" flag between the steps of the callback did not stop it: run 18 crashed with the guard in place, one line after `End()` returned. The stacks name only the lambda under `FTimerManager::Tick` (`EXCEPTION_ACCESS_VIOLATION reading address 0x000001fb000003aa`, an object pointer with garbage in its upper half); which object is gone is not known, and a release build without symbols does not say. Things not yet tried: end the run from the next tick instead of inside the callback (`SetTimerForNextTick` or a one-shot `FTSTicker`), so the timer callback returns cleanly before `RequestExit`; and read `UEMinidump.dmp` with the mod's pdb. Evidence: `CrashContext.runtime-xml` of runs 04, 05, 05c and 18 of one chat, stack `...FLoopTest::Start::<lambda_2>::operator()() ← FTimerManager::Tick()`. (2026-10-06, game 502094, SML 3.12.0, UE 5.6.1-CSS)
 
-## 12. Coroutines (UE5Coro) and splitting work across frames
+## Coroutines (UE5Coro) and splitting work across frames
 
 You can include UE5Coro in the mod as source. It requires C++20.
 - `UE5Coro::TCoroutine<>` + the last parameter `FForceLatentCoroutine = {}` (latent mode, ticks together with the world).
@@ -56,7 +56,7 @@ You can include UE5Coro in the mod as source. It requires C++20.
   - `await_resume` resets the clock.
 - `Latent::NextTick()`, `Latent::AsyncLoadObject(SoftPtr)`.
 - Critical section that must not be cancelled: `UE5Coro::FCancellationGuard`. Cleanup: `ON_SCOPE_EXIT`. Control: `Cancel()`, `IsDone()`.
-- Note from item 11.11: a coroutine starts synchronously.
+- Note from pitfall 11 above: a coroutine starts synchronously.
 
 ```cpp
 UE5Coro::TCoroutine<> UMyModule::ProcessAll(TArray<FItem> Items, FForceLatentCoroutine)
@@ -83,7 +83,7 @@ UE5Coro::TCoroutine<> UMyModule::ProcessAll(TArray<FItem> Items, FForceLatentCor
 
 **Compression:** `FOodleCompressedArray::CompressTArray` and `DecompressToTArray` with Kraken and Fast compressed 256 MB to about 0.7 MB. Hash: `CityHash64WithSeed`.
 
-## 15. Compiler pitfalls (MSVC/UHT)
+## Compiler pitfalls (MSVC/UHT)
 
 - UHT runs with `-WarningsAsErrors`.
 - **Variable shadowing is a hard error:**

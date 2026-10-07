@@ -2,14 +2,14 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
-## 3. Project and mod structure
+## Project and mod structure
 
 **Plugins in the starter project** (the `Mods/` directory):
 - `SML`: runtime.
 - `SMLEditor`: Blueprint Hook and Mixin editors, "Generate C++ Config Struct Header", recipe editor and linter.
 - `Alpakit`: mod wizard, packaging, copying to the game and launching.
 - `AccessTransformers`: access to private members of the game.
-- `WwisePatches`: Wwise patches, applied automatically at build (`references/setup.md`, 2.6).
+- `WwisePatches`: Wwise patches, applied automatically at build (`references/setup.md`, "Project location first, then the Wwise integration").
 - `GameFeatures/ExampleMod`: example mod.
 
 **Where mods live:** `Mods/<Mod>` or `Mods/GameFeatures/<Mod>`.

@@ -4,7 +4,7 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
 
 ## Giving the autopilot a route of your own
 
-- **The autopilot drives a route given by a mod, and signals follow that route.** A hook on `FindPathSync` (`references/sml-api.md`, section 5) replaced the result for one train with a route through a 320 m siding instead of the game's 228 m main line. The new route had the same first and last points as the game's route, with the siding's connections spliced in and `Distance` recomputed. It was a new `FRailroadPath` in `Result.Path` (`Goal` and `Path->Station` unchanged).
+- **The autopilot drives a route given by a mod, and signals follow that route.** A hook on `FindPathSync` (`references/sml-api.md`, "SML: hooks") replaced the result for one train with a route through a 320 m siding instead of the game's 228 m main line. The new route had the same first and last points as the game's route, with the siding's connections spliced in and `Distance` recomputed. It was a new `FRailroadPath` in `Result.Path` (`Goal` and `Path->Station` unchanged).
   - The train took the siding five times out of five, on a layout with block signals only and on one with path signals at the junction entrances. There was no autopilot error, and it docked normally.
   - The train kept the very `FRailroadPath` object the hook returned (`mAtcData.Path` compared equal to it) until the next docking.
   - The autopilot set the switch itself, and the path signal in front of the switch cleared for the mod's diverging route.
