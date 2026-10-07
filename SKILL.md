@@ -23,11 +23,16 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
 | Tests, release checklist, ficsit.app, licences, pull requests to other people's mods | `references/testing-publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
-| Railways: trains, timetables, stations, platforms, tracks, signals, blocks | `references/railroad.md` |
 | Open questions | `references/open-questions.md` |
 | Recording findings, folding them in, pull requests to this skill | `references/learning.md` |
 
-`learned/findings.md` holds findings that are not folded into the references yet. Check it too when a topic comes up.
+**Domains.** A topic that only some mods need lives in its own folder `domains/<name>/`, not in `references/`. Open a domain's files only when the task touches its topic: a mod about something else never reads them, so they cost it nothing. Which category a fact belongs to is decided in `references/learning.md`, section 1.
+
+| Domain | Folder | Open it when the mod deals with |
+|---|---|---|
+| railroad | `domains/railroad/` | trains, timetables, stations, platforms, tracks, signals, blocks, routes |
+
+`learned/findings.md` holds the core findings that are not folded into the references yet, and `learned/<domain>.md` those of a domain. Check the core inbox and the inbox of every domain the task touches, when a topic comes up.
 
 Markers in the files: no marker = verified in practice, **[source]** = read from SML or game code but not tested, **[?]** = uncertain. Before you build code on **[source]** or **[?]**, check it in the code (`Mods/SML/Source/SML`, `Source/FactoryGame/Public`, `<UE-CSS>/Engine/Source`) or on https://docs.ficsit.app. A quick way: find the same API used in SML, the game or another mod that already compiles.
 
@@ -114,7 +119,7 @@ Check the licence before you fork. Send changes as separate pull requests and pu
 
 The game, SML and the engine change, and this skill only stays useful if what each session discovers flows back into it. Full procedure: `references/learning.md`.
 
-- **While you work:** as soon as you establish something the skill does not have, find that the skill is wrong, or test a **[source]**/**[?]** claim, add an entry to `learned/findings.md` with its marker, evidence, date and versions. Tell the user in one line. Search the skill first so you do not duplicate it. Leave out project decisions and anything personal.
+- **While you work:** as soon as you establish something the skill does not have, find that the skill is wrong, or test a **[source]**/**[?]** claim, add an entry to the inbox of its category (core: `learned/findings.md`, a domain: `learned/<domain>.md`, see `references/learning.md`, section 1) with its marker, evidence, date and versions. Tell the user in one line. Search the skill first so you do not duplicate it. Leave out project decisions and anything personal.
 - **When a modding task is done:** if 5 or more entries are waiting, or a correction of an unmarked statement, or an entry that prevents a crash or data loss, ask the user once: fold the findings into the skill, fold them and open a pull request to the skill's upstream repository, or not now.
 - **Updating:** at the start of a modding task, once per session, offer in one line to check the upstream for a newer skill (details and when: `references/learning.md`, section 6). An update commits the local state first and then merges; it never overwrites local knowledge that the upstream lacks, and it ends with a list of what only this copy knows, offered as a pull request.
 - **Maintainer:** the repository's owner can ask to merge the users' pull requests into a new version (`references/learning.md`, section 8; the owner is named in `local/user.md`).
