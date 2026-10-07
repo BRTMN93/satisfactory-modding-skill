@@ -5,6 +5,7 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
 **Game railway widgets** (dumped at runtime, game 502094, SML 3.12.0, 2026-10-02)
 - All three windows are `Widget_UseableBase_C : UFGInteractWidget` and get their object in `UFGInteractWidget::mInteractObject` (public).
 - `Content/FactoryGame/Buildable/Factory/Train/Station/Widget_TrainStationNew`, the class in the station's `mInteractWidgetSoftClass`.
+  - The list of the trains that stop at the station is on the window's Timetable panel, not on the Train Station panel (a tester's correction of a manual-test step). Name panels and buttons in manual-test steps as a screenshot shows them, not from memory. (2026-10-04, game 502094, SML 3.12.0)
   - Variable `RailroadStation`.
   - The frame `mTrainStationWindow` (`Widget_Window_DarkMode_C`) lists the header tabs in `mTabs`: an array of the Blueprint struct `FImageAndText`, with fields `Texture_4_…` (`UTexture*`) and `Text_5_…` (`FText`). It has two entries, station and timetable.
   - Each tab shows the panel with the same index among the children of `HorizontalBox_0` (not a variable) in the `mContent` named slot of `Widget_SlidingTabs`. The sliding tabs size the window to the shown panel (the station panel is 594 px wide).
