@@ -78,7 +78,7 @@ Only after the user said yes to option 2 in this session. Pushing and opening a 
 2. Fold the findings first (section 4) and run `scripts/check-private.ps1`. A commit that the check flagged is never pushed.
 3. Show the user the full diff before anything leaves the computer, and say which files outside `references/` and `learned/` it touches (`SKILL.md`, `scripts/`). A pull request that changes a script or a rule file needs the user's separate yes for that part.
 4. Create a branch: `findings/<yyyy-mm-dd>-<topic>`.
-5. Commit with the user's own git identity. Follow `local/user.md` for authorship and attribution rules if it exists.
+5. Commit with the user's own git identity. Follow `local/user.md` for authorship and attribution rules if it exists. If it holds no git identity, ask the user once, before the commit, whether to link the commit and the pull request to their GitHub account (login and e-mail, or the `<login>@users.noreply.github.com` address) and save the answer in `local/user.md`. Never copy the identity from the global git config without asking.
 6. If the user cannot push to the upstream, fork it: `gh repo fork --remote --remote-name fork`, then push the branch to `fork`. Otherwise push to `origin`.
 7. Open the pull request against the upstream's default branch with `gh pr create --repo <owner/name>`. Title: what changed, in a few words. Body, in English:
    - what was added, corrected or confirmed, grouped by file,

@@ -33,6 +33,10 @@ Markers in the files: no marker = verified in practice, **[source]** = read from
 
 If `local/user.md` exists in this skill's folder, read it at the start. It holds the user's personal conventions (git identity, authorship rules, paths) and overrides the generic advice here.
 
+- **Language:** answer in the language the user writes to you in. Code, comments, commit messages, pull request texts and the files of this skill are always English.
+- **Git identity:** when a commit or pull request is first needed under the user's name and `local/user.md` has no git identity, ask once whether to link the work to their GitHub account (login and e-mail) and save the answer in `local/user.md`. Do not take the identity from the global git config without asking.
+- **The skill stays general:** it holds facts about the game, SML and the engine, never one user's project. A project only feeds it findings.
+
 ## Rules that prevent the most common mistakes
 
 1. **Test in the packaged game.** In the starter project the editor does not load SML modules and does not apply patches, so a test in the editor proves nothing.
