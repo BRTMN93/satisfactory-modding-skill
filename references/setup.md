@@ -60,7 +60,7 @@ The SML repository `satisfactorymodding/SatisfactoryModLoader` is the `FactoryGa
 - `Mods/SML`, `Mods/SMLEditor`, `Mods/Alpakit`, `Mods/AccessTransformers`,
 - `Mods/GameFeatures/ExampleMod`.
 
-The SML version in the project must be the one the game has (3.12.0 in my case).
+The SML version in the project must be the one the game has (3.12.0 here).
 
 **Which branch to clone.** The documentation (the *StarterProjectViaClone* page) says to take `master` or `dev`, whichever was updated last. The date alone is not enough, because the branches differ in Wwise version:
 - Example from 2026-10: `master` (`d2162c9`) had headers 502094 and patches for Wwise 2023.1.14. `dev`, 4 commits newer, had the same headers, but patches for Wwise 2025.1.6 and for a future game changelist 503514. For game 502094, `master` was the right one.
@@ -78,7 +78,7 @@ The integration writes `Plugins/Wwise`, `Plugins/WwiseNiagara` and `<Project>_Ww
   2. Integrate Wwise in Project… → version 2023.1.14.8770.
   3. Wwise Project: "New project". The field is red, because the config points to a nonexistent `SatisfactoryMod_WwiseProject`. This is normal.
 - The integration names the Wwise project after the folder: in the `StarterProject` folder it created `StarterProject_WwiseProject`. `RootOutputPath` in `DefaultGame.ini` stays at `SatisfactoryModLoader_WwiseProject`. Leave the modified `DefaultGame.ini` as it is.
-- I skipped the soundbank generation from the documentation, and building and packaging worked (two projects).
+- Without the soundbank generation from the documentation, building and packaging worked (two projects).
 - **The build applies the Wwise patches itself.** `Mods/WwisePatches/WwisePatches.uplugin` has the script `applyPatches.ps1` in `PreBuildSteps`. It applies `Patches/*.patch` to `Plugins/Wwise` and records the applied ones in `Plugins/Wwise/applied_patches.txt`. You need to do nothing by hand. The patches fit one Wwise version, so a version other than the one from the branch will not build.
 
 ### 7. Linux toolchain (optional, for server builds)
@@ -93,7 +93,7 @@ Compiles FactoryGame, SML, Wwise and the mods:
 ```
 - The time of the first compile varies a lot. Measurements on the same computer (14 physical cores, 16 GB RAM):
   - older project: 1929 actions, about 1.7 h, one action at a time (UBT reserves 1.5 GB per action),
-  - fresh `master` clone from 2026-10: 365 actions, 21 min, `Executing up to 14 processes, one per physical core` with the local Unreal Build Accelerator. I did not establish the cause of the difference.
+  - fresh `master` clone from 2026-10: 365 actions, 21 min, `Executing up to 14 processes, one per physical core` with the local Unreal Build Accelerator. The cause of the difference is not known.
 - UBT chooses the number of processes at the start (line `Determining max actions to execute in parallel`), so close the browser, Docker and WSL before the compile, not during it.
 - Do not kill `dotnet.exe` processes from the engine folder during compiling or packaging: that is UnrealBuildTool itself.
 - Output: `Binaries/Win64/UnrealEditor-FactoryGame.dll`, and for mods with C++ `Mods/.../Binaries/Win64/UnrealEditor-<Mod>.dll`. A mod with assets only (e.g. `ExampleMod`) has no DLL.

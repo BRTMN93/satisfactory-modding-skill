@@ -25,4 +25,4 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 
 **Host-only features** (e.g. a cache) must skip clients and the dedicated server.
 
-**Test on a dedicated server.** It is free on Steam and runs on the same computer. I did not do this in my project, so it is the first candidate for hidden bugs.
+**Test on a dedicated server.** It is free on Steam and runs on the same computer. It has not been done yet for the mods this skill was built from, so it is the first candidate for hidden bugs.

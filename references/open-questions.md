@@ -5,7 +5,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 ## Uncertain / to verify
 
 - Requirements for a ficsit.app package: Steam and EGS, servers.
-- Whether `-Target=` is an official `PackagePlugin` option. It worked for me.
+- Whether `-Target=` is an official `PackagePlugin` option. It worked in practice.
 - Whether generating Wwise soundbanks is ever needed.
 - SMM's rules for removing mods: inferred from the `.smm` markers, without reading the ficsit-cli code.
 - `SpawnLocal` + `bReplicates` + NetMulticast: it worked in one mod, the SML docs say otherwise.

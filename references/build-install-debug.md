@@ -81,7 +81,7 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - Timestamps are in **UTC**.
   - The first line, `Log file open, <date> <time>`, is in **local** time, while the line stamps and the backup name are UTC, and the backup is named after the UTC time of the *new* start that renamed it. A run's log therefore cannot be matched to a start time without the time zone; match it by its first line and a line number. Evidence: `Log file open, 10/06/26 19:01:03` above line stamps of 17.01 UTC (UTC+2); a log first opened at 20:21:45 local became `FactoryGame-backup-2026.10.06-18.21.45.log`. (2026-10-06, game 502094, SML 3.12.0)
 - Line format: `[2026.09.29-17.04.43:468][465]LogX: Display: ...`. The second number is the frame number modulo 1000, so you can compute FPS from the frame difference and the time.
-- Many lines with the same frame number spread over seconds mean a hitch. This is how I found a 3-second freeze.
+- Many lines with the same frame number spread over seconds mean a hitch. A 3-second freeze was found this way.
 
 **Useful log lines**
 - `LogInit: Engine Version / Net CL / Build Configuration`

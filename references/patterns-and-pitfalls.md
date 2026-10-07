@@ -27,7 +27,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 13. **Cache keys.**
     - Compute them from the content: a rounded hash of the data used + settings + mod versions.
     - Do not base them on the date or file size, because autosaves rotate through slots and saves get copied.
-    - The hash must cover everything that affects the result (I missed the spline shapes).
+    - The hash must cover everything that affects the result (the spline shapes were once missing from it).
     - Do not write the cache while the state is changing. Use a "dirty" flag.
 14. **Measure first, then optimize.** Logs with timings, the same save before and after the change. A single run is only a hint.
     - A single call timed with `FPlatformTime::Cycles64()` on Windows has a resolution of 0.1 µs: two back-to-back reads gave a 0 µs median and every single-call result was a multiple of 0.1 µs (**[?]** consistent with the usual 10 MHz QueryPerformanceCounter). Time a loop of thousands of calls for anything under a microsecond, and time single calls only for the cold-cache distribution.

@@ -15,7 +15,7 @@ This section helps if your mod draws something, e.g. a map, a chart or a preview
 
 **`BeginDrawCanvasToRenderTarget` has two flaws**
 1. It gives you a canvas **shared by the whole world** (`World->GetCanvasForRenderingToTarget()`). If you hold it across many frames and someone else draws to a render target in the meantime, your end-of-draw is lost, the canvas leaks, and the other party's canvas is deleted.
-2. The canvas works in `CDM_ImmediateDrawing` mode, so **every `DrawItem` is a separate GPU pass**. Thousands of elements meant 51 s of drawing for me instead of 3–7 s.
+2. The canvas works in `CDM_ImmediateDrawing` mode, so **every `DrawItem` is a separate GPU pass**. Thousands of elements meant 51 s of drawing instead of 3–7 s.
 
 **Your own canvas** (the same thing the engine does, but on your object):
 ```cpp
