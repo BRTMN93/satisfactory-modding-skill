@@ -16,6 +16,8 @@
 #                     failed checks as "<TEST_TAG> ... FAILED".
 #   STATUS_PATTERN    optional extended regex of the status lines a scenario repeats while it waits (e.g. a train
 #                     table every 30 s). They do not count as a new step, so a run that stands still is reported.
+#   IGNORE_PATTERN    optional extended regex of expected problem lines (e.g. a self-test's deliberate warnings).
+#                     The script drops them itself, so the caller only forwards what is left.
 LOG="$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"
 TEST="$1"; FROM="${2:-0}"; ID="${3:-}"
 STEP="${WATCH_SECONDS:-30}"
@@ -26,17 +28,19 @@ sleep "$STEP"
 if [ ! -f "$LOG" ]; then echo "RUN $TEST started ?"; echo "game not started yet"; echo "LINES $FROM $ID"; exit 0; fi
 N=$(wc -l < "$LOG" 2>/dev/null || echo 0)
 NOWID=$(head -n 1 "$LOG" 2>/dev/null | tr -dc "0-9.:-")
+OLDFROM="$FROM"
 { [ "$N" -lt "$FROM" ] || { [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; }; } && FROM=0
 STARTED=$(grep -m1 "$TAG" "$LOG" 2>/dev/null | sed -E 's/^\[([^]]*)\].*/\1/')
 echo "RUN $TEST started ${STARTED:-?}"
-# A new log: the run that was watched may have ended in the renamed one (a queue starts the next game at once)
+# A new log: the run that was watched may have ended in the renamed one (a queue starts the next game at once).
+# Only result lines after the caller's own position count: those before it belong to the run before the watched one.
 if [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; then
   B=$(ls -t "$(dirname "$LOG")"/FactoryGame-backup-*.log 2>/dev/null | head -n 1)
-  [ -n "$B" ] && grep -E "$TAG RESULT|RESULT (PASS|FAIL|CRASH|TIMEOUT)" "$B" | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | tail -n 3 | sed 's/^/previous log: /'
+  [ -n "$B" ] && tail -n +"$((OLDFROM + 1))" "$B" | grep -E "$TAG RESULT|RESULT (PASS|FAIL|CRASH|TIMEOUT)" | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | tail -n 3 | sed 's/^/previous log: /'
 fi
 NEW=$(tail -n +"$((FROM + 1))" "$LOG" 2>/dev/null | head -n "$((N - FROM))")
 PROBLEMS=$(echo "$NEW" | grep -E "$TAG (FAILED|RESULT)|$TAG .*FAILED|$CAT: (Error|Warning)|Fatal error|Unhandled Exception|RESULT (PASS|FAIL|CRASH|TIMEOUT)" \
-  | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | awk '!seen[$0]++' | head -10)
+  | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | { if [ -n "$IGNORE_PATTERN" ]; then grep -Ev "$IGNORE_PATTERN"; else cat; fi; }   | awk '!seen[$0]++' | head -10)
 if [ -n "$PROBLEMS" ]; then echo "$PROBLEMS"; fi
 PROGRESS=$(echo "$NEW" | grep "$TAG" | { if [ -n "$STATUS_PATTERN" ]; then grep -Ev "$STATUS_PATTERN"; else cat; fi; })
 if [ -z "$PROGRESS" ]; then echo "no new step for $STEP s"; fi
