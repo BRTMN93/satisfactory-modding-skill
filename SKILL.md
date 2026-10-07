@@ -21,7 +21,9 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md` |
 | UI injection into game windows, widget hooks from C++, popups, searchable lists | `references/ui.md` |
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
-| Tests, release checklist, ficsit.app, licences, pull requests to other people's mods | `references/testing-publishing.md` |
+| Tests, launching the game into a save, test mode, release checklist | `references/testing.md` |
+| Automated test runs: watchers (`scripts/watch-run.sh`), series, sub-agents | `references/test-automation.md` |
+| ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
 | Open questions | `references/open-questions.md` |
 | Recording findings, folding them in, pull requests to this skill | `references/learning.md` |
@@ -104,7 +106,7 @@ The manual command, the zip layout and the details are in `references/build-inst
 - **More:** `references/build-install-debug.md`.
 
 ### Before a release
-Go through the checklist in `references/testing-publishing.md`:
+Go through the checklist in `references/testing.md`:
 - every build target you release,
 - a small and a large save,
 - 3 loads of the save and a return to the menu,
@@ -114,7 +116,7 @@ Go through the checklist in `references/testing-publishing.md`:
 - release notes with numbers from measurements.
 
 ### Working on someone else's mod
-Check the licence before you fork. Send changes as separate pull requests and put the test evidence in the description. Push, open a pull request or comment on GitHub only after the user explicitly agrees. Details: `references/testing-publishing.md` and `references/tools.md`.
+Check the licence before you fork. Send changes as separate pull requests and put the test evidence in the description. Push, open a pull request or comment on GitHub only after the user explicitly agrees. Details: `references/publishing.md` and `references/tools.md`.
 
 ## The skill learns
 

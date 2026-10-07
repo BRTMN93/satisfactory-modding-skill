@@ -12,6 +12,7 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | Signals and track connections, how signals are placed, holding a train at a signal with hooks | `domains/railroad/signals.md` |
 | Giving the autopilot a route of your own, push-pull trains, two-way single-track lines | `domains/railroad/own-routes.md` |
 | The game's railway windows (station, signal, locomotive), adding a tab to the station window | `domains/railroad/ui-windows.md` |
+| Test layouts: popular track layouts to check, build lists in Foundations | `domains/railroad/test-layouts.md` |
 | Pitfalls | below |
 
 New findings of this domain go to `learned/railroad.md`.

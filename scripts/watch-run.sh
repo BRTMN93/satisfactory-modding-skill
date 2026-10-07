@@ -1,6 +1,6 @@
 #!/bin/bash
 # watch-run.sh <test> <from_line> [<log_id>]     (bash, e.g. Git Bash on Windows)
-# For a sub-agent that watches an automated test run in a loop (references/testing-publishing.md).
+# For a sub-agent that watches an automated test run in a loop (references/test-automation.md).
 # Waits $WATCH_SECONDS (default 30), then reads the game log lines added since <from_line> and prints:
 #   RUN <test> started <time of the first line with the test tag>
 #   problem lines (mod errors, failed checks, crash, result), deduplicated, without timestamps, at most 10
