@@ -118,18 +118,8 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - `InvalidateRuntimeInstanceDataForIndex`: removal of lightweight buildings.
 - `AFGHUD::CloseRespawnUI`: the player has finished joining, you can send data from here.
 - `UFGSaveSession::SaveGame(const FString&, FOnSaveGameComplete, void*)`: the "after" hook fires on manual save and on autosave (`<session>_autosave_0..2`). The serialization itself happens at the end of the frame.
-- `FRailroadNavigation::FindPathSync(AFGLocomotive*, AFGBuildableRailroadStation*, FRailroadGraphAStarFilter)`: a static member function that returns a struct by value. A "before" hook on it works:
-  `SUBSCRIBE_METHOD(FRailroadNavigation::FindPathSync, [](auto& Scope, AFGLocomotive* Locomotive, AFGBuildableRailroadStation* Station, FRailroadGraphAStarFilter Filter) { … })`
-  - There is no `Self` argument.
-  - `Scope(Locomotive, Station, Filter)` runs the original and returns its result. `Scope.Override(Result)` replaces it. A handler that returns without touching `Scope` lets the original run.
-  - Log line: `LogNativeHookManager: Display: Successfully hooked function FRailroadNavigation::FindPathSync at 00007FFD5FAD6D90`.
-  - A train drove the route given through `Override` (`domains/railroad/own-routes.md`, "Giving the autopilot a route of your own").
-- **Hook targets in the railway signalling, verified.** All four installed in `POST_INITIALIZATION` with `SUBSCRIBE_METHOD` (plain structs, no sample object) and fired on the game thread:
-  - `FFGRailroadSignalBlock::GetAspectFor`, a const method returning an enum: `[](auto& Scope, const FFGRailroadSignalBlock* Self, AFGBuildableRailroadSignal* Signal)`. `Scope(Self, Signal)` returns the game's aspect, `Scope.Override(ERailroadSignalAspect::RSA_Stop)` replaces it.
-  - `FFGRailroadSignalBlock::CreatePathReservation`, returning a `TWeakPtr` by value: `[](auto& Scope, FFGRailroadSignalBlock* Self, AFGTrain* Train, AFGBuildableRailroadSignal* EntrySignal, int32 EntryPathSegment, FRailroadPathSharedPtr TrainPath)`. `CreateExclusiveReservation` is the same without the last argument.
-  - `FFGRailroadBlockReservation::Approve`, a void method: `[](auto& Scope, FFGRailroadBlockReservation* Self)`. The train and the entry signal are public members of `Self` (`Train`, `EntrySignal`).
-  - With the handlers rejecting every call in their first line, a train's pass showed the same aspects at the same distances and speeds as in a run without the hooks. Call rates in a world with three trains and 16 signals: `GetAspectFor` 1.3 a second, reservation creation and approval 0.25 a second each.
-  - What these hooks do to trains: `domains/railroad/signals.md`, "Holding a train at a signal with hooks". Log lines: `Successfully hooked function FFGRailroadSignalBlock::GetAspectFor at …`, the same for the other three. (2026-10-03, game 502094, SML 3.12.0)
+- A static member function that returns a struct by value can be hooked with `SUBSCRIBE_METHOD`; the handler has no `Self` argument, `Scope(...)` returns the original result and `Scope.Override(Result)` replaces it. Verified on the game's route search: `domains/railroad/own-routes.md`, "Hooking the route search".
+- Methods of plain structs (not `UObject`s) can be hooked with `SUBSCRIBE_METHOD` without a sample object, including const methods returning an enum and methods returning a `TWeakPtr` by value. Verified on the railway signalling: `domains/railroad/signals.md`, "Hook targets in the railway signalling".
 - Placing one blueprint with buildings triggers about 300 hooks. Merge such series into one batch of work.
 
 ```cpp

@@ -92,5 +92,6 @@ UE5Coro::TCoroutine<> UMyModule::ProcessAll(TArray<FItem> Items, FForceLatentCor
 - `C2440` on `FVector4f{ FVector3f{ FVector }, 1 }`: first build an `FVector P`, then `FVector4f{ float(P.X), float(P.Y), float(P.Z), 1 }`.
 - `C2398` (narrowing `int64` → `int`): `FMath::CeilToInt(double)` returns int64, use `CeilToInt32` or `FloorToInt32`.
 - `C2679` (no `operator<<` for `const T`): `FArchive <<` needs a non-const lvalue, and a captured `const` copy stays `const` even in a `mutable` lambda.
+- **[source]** The name `FTrackGraph` is taken by a game struct (`FGRailroadSubsystem.h`). Custom track graph types must use a different name or a prefix.
 - Cast `sizeof` explicitly, e.g. `W * static_cast<uint32>(sizeof(FColor))`.
 - **Include the headers you use**, e.g. `RenderingThread.h`, `RHICommandList.h`, `RHIUtilities.h`, `TextureResource.h`, `Tasks/Task.h`, `Misc/FileHelper.h`, `HAL/FileManager.h`, `HAL/IConsoleManager.h`, `ImageUtils.h`, `Modules/ModuleManager.h`, `Hash/CityHash.h`, `Compression/OodleDataCompressionUtil.h`, `GlobalRenderResources.h`.

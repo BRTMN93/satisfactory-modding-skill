@@ -57,6 +57,15 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
   - A train saved with the autopilot off came back parked in exactly the same place (0.00 m off), status `TS_Parked`, no route, and stayed there.
   - Evidence (game 502094): `loaded …: train …, autopilot 1, … speed 95 km/h (saved at 95), 0.43 m from where it was saved, route no path`, `[frame 1] t=0.4 event … error SDLE_NoPower`, `[frame 1] route on …: the game's, 14 points … at 61 km/h, tick 2`, `[frame 3] t=0.7 event … error SDLE_NoError`. (2026-10-03, game 502094, SML 3.12.0)
 
+## Hooking the route search
+
+- `FRailroadNavigation::FindPathSync(AFGLocomotive*, AFGBuildableRailroadStation*, FRailroadGraphAStarFilter)`: a static member function that returns a struct by value. A "before" hook on it works:
+  `SUBSCRIBE_METHOD(FRailroadNavigation::FindPathSync, [](auto& Scope, AFGLocomotive* Locomotive, AFGBuildableRailroadStation* Station, FRailroadGraphAStarFilter Filter) { … })`
+  - There is no `Self` argument.
+  - `Scope(Locomotive, Station, Filter)` runs the original and returns its result. `Scope.Override(Result)` replaces it. A handler that returns without touching `Scope` lets the original run.
+  - Log line: `LogNativeHookManager: Display: Successfully hooked function FRailroadNavigation::FindPathSync at 00007FFD5FAD6D90`.
+  - A train drove the route given through `Override` (`domains/railroad/own-routes.md`, "Giving the autopilot a route of your own").
+
 ## Push-pull trains and two-way single-track lines
 
 - **Push-pull trains (a locomotive at each end) on a two-way single-track line: timetable, docking, own routes and parking work as on a loop.**

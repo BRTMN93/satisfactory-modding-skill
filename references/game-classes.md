@@ -19,6 +19,12 @@ This is the most important thing to remember.
 - `Factory_Tick` runs separately from the normal actor tick,
 - `IsProducing`, `SetIsProductionPaused`, `GetPowerInfo`, `SetPendingPotential`.
 
+### Inventories, belts and game delegates
+- Reading an inventory is cheap: `GetInventory()->GetNumItems(Item)` cost 0.10–0.20 µs per call on a 48-slot inventory, so polling once a second needs no change delegates (measured on train platforms: `domains/railroad/data-events.md`, "Polling platform stock is cheap").
+- `AddStack` from code puts at most one stack into a slot: 50 000 units of water into a fluid wagon whose slot size said 1 600 000, and 100 ore into a Smelter's input buffer when 1000 were offered. Fluids count 1000 units per m³. Evidence: `domains/railroad/data-events.md`, "A Fluid Freight Car holds 2400 m³", and `domains/railroad/timetable-docking.md`, "What a backed-up belt line takes from a platform".
+- Right after a save loads, empty belts and machines pull far more than their nominal rate until belts and input buffers fill: six Smelters (180/min nominal) took 950–1190/min for the first minutes, and a rate estimator with a 60 s window needed about 15 minutes to settle. Measure rates later or for longer (details: `domains/railroad/timetable-docking.md`).
+- Dynamic delegates of game objects (for example `AFGTrain::mOnDockingStateChanged`) are bound from a `UObject` with `UFUNCTION` handlers (`AddDynamic`); keep that object alive (`AddToRoot` or a `UPROPERTY`). Example with the train delegates: `domains/railroad/data-events.md`.
+
 ### Saves
 - `UFGSaveSession::Get(World)`: `SaveGame`, `LoadGame`.
 - **Saving from code:** `UFGSaveSession::Get(World)->SaveGame(Name, FOnSaveGameComplete::CreateLambda([](bool bSaved, const FText& Error, void*) {...}), nullptr)`. The name is the file name without `.sav`. The file lands in the same `SaveGames\<SteamID64>` folder and keeps the session name of the loaded save. The callback came in the same frame as the call, about 90 ms later, with `bSaved = true`.
@@ -46,7 +52,6 @@ This is the most important thing to remember.
 - Lightweight building transforms are bit-identical.
 - Some actors (pipe junctions, pumps, flow indicators) get rotations recomputed with a drift of about 1e-10.
 - Some actors get new names. Stations, trains and signals do not: `FGTrainStationIdentifier_<n>`, `Build_TrainStation_C_<n>`, `BP_Train_C_<n>` and `Build_RailroadBlockSignal_C_<n>` kept the same path name (`/Game/FactoryGame/Map/GameLevel01/Persistent_Level.Persistent_Level:PersistentLevel.<name>`) through four save/load cycles. A saved hard reference and the path name both identify them. Signals have no player-visible name. A position in a list sorted by name is no identity: after one signal was dismantled, the others moved down one place.
-- A train's route is not saved (`AFGTrain::mAtcData` has no `SaveGame` flag). A train saved at 95 km/h on a route written by a mod came back in the first tick with no route, 0.43 m from where it was saved and at the same speed. In the second tick (0.4 s later) every train with the autopilot on had a new route from the game's own pathfinding. A train saved with the autopilot off came back parked in exactly the same place. Details: `domains/railroad/own-routes.md`, "A train's route is not saved".
 - **A reference to a dismantled object.** After `IFGDismantleInterface::Execute_Dismantle(Actor)` on a block signal, the `UPROPERTY` pointer is set and `IsValid` is true in the same frame. One second later the pointer is still set but `IsValid` is false. After `CollectGarbage` the pointer stored as a `TMap` value is null and the map key stays. Saved and loaded again, the key is still there with a null value. Test references with `IsValid`, not only for null.
 - Other mods spawn helper buildings with a delay. Example: `EmptyActor_C` appeared about 2.5 s after load, at the player's location.
 - Takeaway: compute data fingerprints only from what you use, rounded, and after data collection has finished.

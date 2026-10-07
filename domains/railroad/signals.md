@@ -39,6 +39,15 @@ Rules for build lists, test layouts and layout checks. Collected from the game h
 - **[source]** The game's pathfinding ignores other trains and takes the shortest route, so two two-way tracks side by side are no passing loop: both directions pick the same one. A passing loop needs each of its two tracks made one-way, with a single block signal behind the switch where a train enters the loop track and a single path signal before the switch where it leaves it (Steam discussion 6982351509012486495; the built layout above is signalled this way).
 - **[source]** The modding docs have no page on the signal classes; their only railway text is the community signal guide (https://docs.ficsit.app/satisfactory-modding/latest/CommunityResources/TrainSignalGuide.html). The FicsIt-Networks reflection pages list `RailroadSignal` and `RailroadSignalBlock`. (2026-10-03, game 502094, SML 3.12.0)
 
+## Hook targets in the railway signalling
+
+- **Hook targets in the railway signalling, verified.** All four installed in `POST_INITIALIZATION` with `SUBSCRIBE_METHOD` (plain structs, no sample object) and fired on the game thread:
+  - `FFGRailroadSignalBlock::GetAspectFor`, a const method returning an enum: `[](auto& Scope, const FFGRailroadSignalBlock* Self, AFGBuildableRailroadSignal* Signal)`. `Scope(Self, Signal)` returns the game's aspect, `Scope.Override(ERailroadSignalAspect::RSA_Stop)` replaces it.
+  - `FFGRailroadSignalBlock::CreatePathReservation`, returning a `TWeakPtr` by value: `[](auto& Scope, FFGRailroadSignalBlock* Self, AFGTrain* Train, AFGBuildableRailroadSignal* EntrySignal, int32 EntryPathSegment, FRailroadPathSharedPtr TrainPath)`. `CreateExclusiveReservation` is the same without the last argument.
+  - `FFGRailroadBlockReservation::Approve`, a void method: `[](auto& Scope, FFGRailroadBlockReservation* Self)`. The train and the entry signal are public members of `Self` (`Train`, `EntrySignal`).
+  - With the handlers rejecting every call in their first line, a train's pass showed the same aspects at the same distances and speeds as in a run without the hooks. Call rates in a world with three trains and 16 signals: `GetAspectFor` 1.3 a second, reservation creation and approval 0.25 a second each.
+  - What these hooks do to trains: `domains/railroad/signals.md`, "Holding a train at a signal with hooks". Log lines: `Successfully hooked function FFGRailroadSignalBlock::GetAspectFor at …`, the same for the other three. (2026-10-03, game 502094, SML 3.12.0)
+
 ## Holding a train at a signal with hooks
 
 A train with a whole route can be held at a signal by hooks in the signalling (the hooks' signatures are in `references/sml-api.md`, section 5). A route that ends at the signal does the same without any hook and without the long-wait error (`SDLE_LongWaitAtSignal`; see "Parking a train at the end of a route, without touching the signals" above).

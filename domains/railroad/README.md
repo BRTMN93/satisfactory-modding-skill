@@ -18,6 +18,5 @@ New findings of this domain go to `learned/railroad.md`.
 
 ## Pitfalls
 
-- **[source]** The name `FTrackGraph` is taken by a game struct (`FGRailroadSubsystem.h`). Custom track graph types must use a different name or a prefix.
 - **[source]** Class names suggested by a chatbot, `AFGBuildableRailroadTrackConnection` and `AFGTrainHalt`, do not exist. The right ones are `UFGRailroadTrackConnectionComponent`, `AFGBuildableRailroadStation` and `AFGTrainStationIdentifier`. Always verify game class names in the headers.
 - Solid-cargo belts keep running while a platform waits for its transfer condition in game 502094 (see `domains/railroad/timetable-docking.md`, "Docking rules in practice"), although the mod Uninterrupted Train Belts/Pipes suggests that they once paused for the whole docking. **[?]** Whether belts pause in the 27 s load/unload phase depends on the layout. Pipes on fluid platforms were measured: they stop in that phase and run while the platform waits (see `domains/railroad/timetable-docking.md`, "Docking rules in practice").
