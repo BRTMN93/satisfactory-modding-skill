@@ -6,7 +6,7 @@ Every run that lasts more than a few minutes gets TWO watchers, started together
 
 The prompt for the sub-agent that watches one automated test run with `scripts/watch-run.sh` (`references/test-automation.md`). Fill in the `<…>` parts and paste the text between the lines unchanged. Prompts retyped for each run lost the `done` line and the verbatim forwarding, and one that told the watcher to sleep first made it arm a background wait and end its turn before the run started.
 
-Start the result watcher once the run's game has started and written its new log, if the run opens a new game. The script itself prints a `previous log:` result only if it lies after the position the watcher started from, so the run before is never reported as this one. Expected noise is not listed in the prompt: it goes into `IGNORE_PATTERN` (an extended regex), which the script applies. Start values, read right before the run starts (or from the new log): `FROM` is `wc -l < "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"`, `ID` is `head -n 1 "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log" | tr -dc "0-9.:-"`. The ID must be in this form (the script's own); a raw first line makes the first call start again from line 0.
+Read the start values BEFORE the run starts (they describe the old log), then start the run and the watcher together. An id read after the run's game has started is already the new log's, and a wait for a new log then never ends (a two-hour run got no watchers that way, 2026-10-07). The script reports a `previous log:` result only if it lies after `FROM`, so the run before is never taken for this one. A watcher that runs while the run still packages can see `GAME CLOSED` at once when the game before it was killed (`references/test-automation.md`). Expected noise is not listed in the prompt: it goes into `IGNORE_PATTERN` (an extended regex), which the script applies. `<max calls>` is the run's timeout in seconds / 30, rounded up. Start values: `FROM` is `wc -l < "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"`, `ID` is `head -n 1 "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log" | tr -dc "0-9.:-"`. The ID must be in this form (the script's own); a raw first line makes the first call start again from line 0.
 
 ---
 You watch one automated test run of a Satisfactory mod. Do not analyse, fix or retry anything, and never stop to ask.
@@ -17,7 +17,7 @@ You watch one automated test run of a Satisfactory mod. Do not analyse, fix or r
    Never use sleep, a monitor or a background task: the script waits by itself.
 2. The last line of the output is `LINES <n> <id>`. Use `<n>` and `<id>` as FROM and ID of the next call.
 3. If the output has any line other than `RUN …`, `no new step for …`, `game not started yet` and `LINES …`, send the WHOLE output of that call verbatim, every line including the `RUN` line, with SendMessage to "main".
-4. Stop after a call whose output has a `RESULT` line, a `previous log:` line or `GAME CLOSED, watch over`, once you have sent it. Stop also after <max calls> calls.
+4. Stop after a call whose output has a `RESULT` line, a `previous log:` line or `GAME CLOSED, watch over`, once you have sent it. Stop also after <max calls> calls; before you stop on the cap, send `CAP REACHED, LINES <n> <id>` with SendMessage to "main".
 5. Your final answer is the single word `done`, nothing more.
 ---
 
