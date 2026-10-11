@@ -56,6 +56,7 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
   - In that second tick every train with the autopilot on also reported `SDLE_NoPower` (with the No Power game rule on; **[?]** not tried on a save with power), cleared 0.2–0.3 s later. A mod that reacts to autopilot errors must ignore the first second after a load. The moving train lost speed in these frames: 95 km/h when loaded, 61 km/h in the second tick, 58 km/h in the third, then it accelerated again.
   - A train saved with the autopilot off came back parked in exactly the same place (0.00 m off), status `TS_Parked`, no route, and stayed there.
   - Evidence (game 502094): `loaded …: train …, autopilot 1, … speed 95 km/h (saved at 95), 0.43 m from where it was saved, route no path`, `[frame 1] t=0.4 event … error SDLE_NoPower`, `[frame 1] route on …: the game's, 14 points … at 61 km/h, tick 2`, `[frame 3] t=0.7 event … error SDLE_NoError`. (2026-10-03, game 502094, SML 3.12.0)
+- **[source]** `FTrainAtcData::ClearPath()` (`FGTrain.h:174`) is public and drops the train's current route; a mod that ends a route of its own can call it so the game finds its own route again (in the second tick, as after a load). Its effect in the packaged game is not observed yet. (2026-10-11, game 502094, SML 3.12.0)
 
 ## Hooking the route search
 
