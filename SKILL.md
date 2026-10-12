@@ -7,6 +7,12 @@ description: Knowledge and procedures for creating, fixing, building, testing an
 
 Verified on: game 1.x (changelist 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SML 3.12.0, Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
 
+## Three rules for every session, read them first
+
+1. **Stay quiet while tests run.** During a test series write to the user only about a failed run, a question, a decision that is theirs, something they must build or do before the tests can go on, and the final result. No message per run phase, per watcher report, per log line or per step; after a run at most one line (counter and result). Outside tests too: fix broken builds, tests and your own slips without narrating them; a request to the user goes in a marked block at the top. Details: `references/test-automation.md`, "Announce a series".
+2. **Closing a task with entries in `learned/`: tell the folding chat before you close.** If `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` with `SendMessage` as the last step, every time (`references/learning.md`, section 3).
+3. **Every prompt for a new chat comes with its model and effort,** in a clearly marked block at the top of the same message ("New chat: model X, effort Y, set it before the first message"), with a push notification where the user is not watching. A prompt without them is not finished.
+
 ## Symptom index
 
 | Symptom | Look first |
@@ -57,10 +63,8 @@ Markers in the files: no marker = verified in practice, **[source]** = read from
 If `local/user.md` exists in this skill's folder, read it at the start. It holds the user's personal conventions (git identity, authorship rules, paths) and overrides the generic advice here.
 
 - **Environment and versions:** at the start of a modding task run `scripts/doctor.ps1` once (the first time with `-Project <folder with FactoryGame.uproject>`). It finds the game, the CSS engine, SML and the starter project's headers, writes them to `local/env.md` and warns when they differ from the "Verified on" line above; then re-check the statements the task depends on (`references/learning.md`, section 2).
-- **Language:** answer in the language the user writes to you in. Code, comments, commit messages, pull request texts and the files of this skill are always English.
-- **Reporting:** tell the user only what they must act on or decide: a question, a decision that is theirs, a change or build they must make before the tests can go on (as a clearly marked request at the top of the message), a result, a risk they would not guess, and the one-line notice of a new inbox entry (`references/learning.md`, section 1). Fix broken builds, tests and your own slips without narrating them, and leave out step-by-step commentary: every line costs the user reading time and tokens.
+- **Language:** answer in the language the user writes to you in. Code, comments, commit messages, pull request texts and the files of this skill are always English. The skill stays general: it holds facts about the game, SML and the engine, never one user's project. A project only feeds it findings.
 - **Git identity:** when a commit or pull request is first needed under the user's name and `local/user.md` has no git identity, ask once whether to link the work to their GitHub account (login and e-mail) and save the answer in `local/user.md`. Do not take the identity from the global git config without asking.
-- **The skill stays general:** it holds facts about the game, SML and the engine, never one user's project. A project only feeds it findings.
 
 ## Rules that prevent the most common mistakes
 
@@ -140,7 +144,7 @@ Check the licence before you fork. Send changes as separate pull requests and pu
 The game, SML and the engine change, and this skill only stays useful if what each session discovers flows back into it. Full procedure: `references/learning.md`.
 
 - **While you work:** as soon as you establish something the skill does not have, find that the skill is wrong, or test a **[source]**/**[?]** claim, add an entry to the inbox of its category (core: `learned/findings.md`, a domain: `learned/<domain>.md`, see `references/learning.md`, section 1) with its marker, evidence, date and versions. Tell the user in one line. Search the skill first so you do not duplicate it. Leave out project decisions and anything personal. A working session only records; folding into the files is a separate step.
-- **When a modding task is done:** if entries were added in this chat and `local/user.md` names a chat that folds the inbox, send it the message `fold the findings inbox` (`SendMessage`) before you close, every time and whatever the count (`references/learning.md`, section 3); a chat that does not tell the folding chat leaves its entries unfolded. Otherwise, if 5 or more entries are waiting, or a correction of an unmarked statement, or an entry that prevents a crash or data loss, ask the user once: fold the findings into the skill, fold them and open a pull request to the skill's upstream repository, or not now.
+- **When a modding task is done:** if entries were added in this chat and `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` before you close, whatever the count (rule 2 above). Otherwise, if 5 or more entries are waiting, or a correction of an unmarked statement, or an entry that prevents a crash or data loss, ask the user once: fold the findings into the skill, fold them and open a pull request to the skill's upstream repository, or not now.
 - **Updating:** at the start of a modding task, once per session, offer in one line to check the upstream for a newer skill (details and when: `references/upstream.md`, section 2). An update commits the local state first and then merges; it never overwrites local knowledge that the upstream lacks, and it ends with a list of what only this copy knows, offered as a pull request.
 - **Maintainer:** the repository's owner can ask to merge the users' pull requests into a new version (`references/upstream.md`, section 3; the owner is named in `local/user.md`).
 - **Publishing needs consent.** Push and pull request only after the user says yes in this session. Run `scripts/check-private.ps1` before every commit.
