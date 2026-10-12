@@ -56,7 +56,9 @@ Entries are grouped by the file they belong to: `## references/<file>.md` in the
 
 ## 3. When to ask the user
 
-At the end of a completed modding task (the goal is reached or the user is wrapping up), count the entries waiting in every inbox (`learned/*.md`; counting the entry lines needs no reading of a domain inbox). Ask **once** if any of these holds:
+**A folding chat comes first.** If `local/user.md` names a standing chat that folds the inbox, a chat that added entries ends its task by sending that chat the message `fold the findings inbox` with `SendMessage` (one message at the end, not one per entry), checks the answer arrived, and does not ask the user or wait for a count. The message is part of closing the task, like the last commit. Seen: working chats recorded entries and closed without telling the folding chat, so the entries waited until the user asked.
+
+Without such a chat: at the end of a completed modding task (the goal is reached or the user is wrapping up), count the entries waiting in every inbox (`learned/*.md`; counting the entry lines needs no reading of a domain inbox). Ask **once** if any of these holds:
 
 - 5 or more entries are waiting, counted over all inboxes (`learned/*.md`),
 - at least one correction of a statement without a marker is waiting (the skill is currently giving wrong advice),
