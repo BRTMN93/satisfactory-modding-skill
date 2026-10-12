@@ -7,11 +7,12 @@ description: Knowledge and procedures for creating, fixing, building, testing an
 
 Verified on: game 1.x (changelist 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SML 3.12.0, Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
 
-## Three rules for every session, read them first
+## Four rules for every session, read them first
 
 1. **Stay quiet while tests run.** During a test series write to the user only about a failed run, a question, a decision that is theirs, something they must build or do before the tests can go on, and the final result. No message per run phase, per watcher report, per log line or per step; after a run at most one line (counter and result). Outside tests too: fix broken builds, tests and your own slips without narrating them; a request to the user goes in a marked block at the top. Details: `references/test-automation.md`, "Announce a series".
 2. **Closing a task with entries in `learned/`: tell the folding chat before you close.** If `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` with `SendMessage` as the last step, every time (`references/learning.md`, section 3).
 3. **Every prompt for a new chat comes with its model and effort,** in a clearly marked block at the top of the same message ("New chat: model X, effort Y, set it before the first message"), with a push notification where the user is not watching. A prompt without them is not finished.
+4. **A working chat never edits, commits or resets this skill's folder; it only writes entries to `learned/`,** and the folding chat (or, without one, a single session on the user's say) folds them. Entries state facts with placeholders (`<station A>`, `<train>`, `<scenario>`, `<Mod>`), never project names, chat numbers or personal data (`references/learning.md`, section 1). Push and pull requests only when the user says so.
 
 ## Symptom index
 
@@ -94,6 +95,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
 11. **Copy anything outside your project before you touch it, and put it back afterwards:** saves, `GameUserSettings.ini`, SMM profiles (`%APPDATA%\ficsit\profiles.json`), the game's `Mods` folder. A copy of a save keeps the session name, so autosaves during tests overwrite the original's slots; test window sizes stay in `GameUserSettings.ini` (`references/testing.md`).
 12. **Multiplayer:** the client (`IsNetMode(NM_Client)`) and the dedicated server (`FPlatformProperties::IsServerOnly()`) can do different things than the host. Do not change the RPC format without need; then different mod versions can play together.
 13. **Keep a backup of a working build outside the game folder,** with a note on how to restore it. A game or SMM update can remove or disable a self-built mod.
+14. **Known crash traps:** `TArray::Add` of its own element, clearing a looping timer from its own lambda, `CollectGarbage` in a world timer, `RequestExit` from a timer callback, a `static` owning rooted `UObject`s, and a new `.cpp` that regroups unity blobs and breaks an untouched file (`references/patterns-and-pitfalls.md`, items 21, 22, 24, 26–28).
 
 ## Procedures
 
@@ -127,14 +129,7 @@ The manual command, the zip layout and the details are in `references/build-inst
 - **More:** `references/build-install-debug.md`.
 
 ### Before a release
-Go through the checklist in `references/testing.md`:
-- every build target you release,
-- a small and a large save,
-- 3 loads of the save and a return to the menu,
-- host with a client and a dedicated server,
-- a clean log,
-- bumped versions,
-- release notes with numbers from measurements.
+Go through the checklist in `references/testing.md`: every build target you release, a small and a large save, 3 loads of the save with a return to the menu, host with a client and a dedicated server, a clean log, bumped versions, release notes with numbers from measurements.
 
 ### Working on someone else's mod
 Check the licence before you fork. Send changes as separate pull requests and put the test evidence in the description. Push, open a pull request or comment on GitHub only after the user explicitly agrees. Details: `references/publishing.md` and `references/tools.md`.
