@@ -190,6 +190,7 @@ UConfigManager* CM = GetGameInstance()->GetSubsystem<UConfigManager>();
 const UConfigPropertySection* Root = CM->GetConfigurationRootSection(FConfigId{"MyMod", ""});
 if (auto* P = Cast<UConfigPropertyFloat>(Root->SectionProperties.FindRef(TEXT("Speed")))) { P->Value = 2.f; P->MarkDirty(); }
 ```
+- **A config value set from code persists into later game starts.** Setting a property's `Value` on the mod's configuration root and calling `MarkDirty()` writes the mod's config file; the next game start reads that value, not the default. A test that changes a setting for itself therefore leaves it for the next test and for the player: a later test that expected the default failed until it set the value itself. Evidence: two runs set an integer setting to 0 with `MarkDirty`, the next run read 0 at start (`the mod holds 0`), the same run after setting the value explicitly passed. (2026-10-12, game 502094, SML 3.12.0)
 
 ### Subsystems
 - `AModSubsystem : AFGSubsystem` with the `ReplicationPolicy` field:
