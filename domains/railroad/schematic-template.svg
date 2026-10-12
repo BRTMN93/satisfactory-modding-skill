@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 350" width="900" height="350" font-family="sans-serif" font-size="12" role="img">
+<title>Layout schematic template (example: a siding on a line)</title>
+<rect width="900" height="350" fill="#fafafa"/>
+<!-- 1. title (15 px, bold) and one line about the scale -->
+<text x="20" y="26" font-size="15" font-weight="bold" fill="#222">&lt;Layout&gt;: siding on line X (template)</text>
+<text x="20" y="46" fill="#555">To scale along the line: 1 Foundation = 10 px (8 m). Across the line not to scale. Positions counted from the building Station A.</text>
+
+<!-- 2. tracks: existing solid #333, new dashed #333, to dismantle / correction red #c0392b -->
+<g fill="none" stroke="#333" stroke-width="2">
+  <line x1="40" y1="140" x2="860" y2="140"/>
+  <path d="M400 140 L420 190 L560 190 L580 140" stroke-dasharray="6 4"/>
+</g>
+<!-- 3. direction chevrons (one-way tracks only; here the new siding) -->
+<g fill="none" stroke="#333" stroke-width="1.5">
+  <path d="M484 184 L492 190 L484 196"/>
+</g>
+
+<!-- 4. station: grey building + light platform, the platform behind the building in the driving direction -->
+<text x="100" y="114" fill="#222" font-weight="bold">Station A</text>
+<rect x="100" y="124" width="30" height="16" fill="#bbb" stroke="#333"/>
+<rect x="130" y="124" width="40" height="16" fill="#eee" stroke="#333"/>
+
+<!-- 5. switches J1, J2: label at the switch -->
+<text x="380" y="165" fill="#222" font-weight="bold">J1</text>
+<text x="584" y="165" fill="#222" font-weight="bold">J2</text>
+
+<!-- 6. signals: symbol on the track, letter (14 px in the standard) above it; the same letter in the build list -->
+<rect x="371" y="135" width="10" height="10" fill="#7b3fa0"/><text x="372" y="126" font-weight="bold" fill="#222">A</text>
+<circle cx="436" cy="140" r="5" fill="#1f9e8e"/><text x="432" y="126" font-weight="bold" fill="#222">B</text>
+<circle cx="440" cy="190" r="5" fill="#1f9e8e"/><text x="436" y="176" font-weight="bold" fill="#222">C</text>
+<rect x="545" y="185" width="10" height="10" fill="#7b3fa0"/><text x="546" y="176" font-weight="bold" fill="#222">D</text>
+<circle cx="610" cy="140" r="5" fill="#1f9e8e"/><text x="606" y="126" font-weight="bold" fill="#222">E</text>
+
+<!-- 7. position axis in Foundations -->
+<g stroke="#999" stroke-width="1"><line x1="40" y1="236" x2="860" y2="236"/>
+  <line x1="40" y1="232" x2="40" y2="240"/><line x1="240" y1="232" x2="240" y2="240"/><line x1="440" y1="232" x2="440" y2="240"/><line x1="640" y1="232" x2="640" y2="240"/><line x1="840" y1="232" x2="840" y2="240"/></g>
+<g fill="#555" text-anchor="middle"><text x="40" y="254">0</text><text x="240" y="254">20</text><text x="440" y="254">40</text><text x="640" y="254">60</text><text x="840" y="254">80</text></g>
+<text x="20" y="274" fill="#555">positions in Foundations along line X</text>
+
+<!-- 8. legend: always the same block, at the bottom, unchanged -->
+<text x="20" y="302" font-weight="bold" fill="#222">Legend</text>
+<rect x="100" y="293" width="30" height="12" fill="#bbb" stroke="#333"/><text x="136" y="303" fill="#222">Train Station</text>
+<rect x="240" y="293" width="30" height="12" fill="#eee" stroke="#333"/><text x="276" y="303" fill="#222">Freight Platform</text>
+<rect x="400" y="293" width="10" height="10" fill="#7b3fa0"/><text x="416" y="303" fill="#222">Path Signal</text>
+<circle cx="510" cy="298" r="5" fill="#1f9e8e"/><text x="522" y="303" fill="#222">Block Signal</text>
+<line x1="610" y1="298" x2="650" y2="298" stroke="#333" stroke-width="2"/><text x="656" y="303" fill="#222">existing track</text>
+<line x1="100" y1="326" x2="140" y2="326" stroke="#333" stroke-width="2" stroke-dasharray="6 4"/><text x="146" y="331" fill="#222">new track</text>
+<line x1="260" y1="326" x2="300" y2="326" stroke="#c0392b" stroke-width="2"/><text x="306" y="331" fill="#222">to dismantle / correction</text>
+<rect x="470" y="320" width="30" height="12" fill="#e8c14a" stroke="#333"/><text x="506" y="331" fill="#222">train</text>
+<path d="M610 320 L618 326 L610 332" fill="none" stroke="#333" stroke-width="1.5"/><text x="626" y="331" fill="#222">driving direction</text>
+</svg>
