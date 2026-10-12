@@ -52,6 +52,7 @@ Measured on a freight platform with one wagon (3200 iron ore, platform 4800), ru
     - **[?]** The likely reason is that none of its wagons stands on a platform there (the second locomotive takes the only platform, see "Which vehicle stands on which platform"), so the station has nothing to wait for. Not checked further.
     - A test that needs a train stuck in a docking has to pick a train whose wagon really stands on a platform.
 - **[source]** FicsIt-Networks exposes the same timetable API in Lua.
+- A test can play a consumer on an unloading Freight Platform by taking items out of its inventory with `UFGInventoryComponent::Remove(ItemClass, Num)` a few times a second: a sampler that reads the platform's amount once a second measures it as a steady outflow, on top of what the belt takes. Measured: 900 a minute removed in 0.5 s steps (15 at a time) plus a 120 a minute belt gave a reading of `1020.0/min` after 30 s. Useful when the layout has no factory that consumes fast enough for a test. (2026-10-12, game 502094, SML 3.12.0)
 
 ## Driving a train through its timetable
 
