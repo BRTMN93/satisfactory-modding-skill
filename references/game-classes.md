@@ -47,7 +47,7 @@ This is the most important thing to remember.
   - `AFGRecipeManager`: `AddAvailableRecipe`, `IsRecipeAvailable`,
   - `UFGInventoryComponent`: `AddStack`, `Remove`, `GetNumItems`.
 
-- **[source]** The "No Power" advanced game setting: `AFGGameState::GetCheatNoPower()` (`FGGameState.h:278`), a replicated `SaveGame` property. A mod that checks whether machines or vehicles have power must look at it first. (2026-10-05, game 502094)
+- **[source]** The "No Power" advanced game setting: `AFGGameState::GetCheatNoPower()` (`FGGameState.h:278`), a replicated `SaveGame` property. A mod that checks whether machines or vehicles have power must look at it first. `GetCheatNoPower()` is a `FORCEINLINE` read of `mCheatNoPower`, so it is only safe when the mod's headers match the game's changelist (between 502094 and 513885 the member moved, see `references/setup.md`, "5. Starter project"). `mCheatNoPower` is a `UPROPERTY( SaveGame, ReplicatedUsing=OnRep_CheatNoPower )`, so reading it through reflection (`FindFProperty<FBoolProperty>(AFGGameState::StaticClass(), TEXT("mCheatNoPower"))`) does not depend on the header layout. Evidence: `FGGameState.h:278` and `:773` at CL513885. (2026-10-05 and 2026-10-13, games 502094 and 513885)
 
 ### Map
 - `AFGMapManager`: map markers.
