@@ -36,7 +36,8 @@ This file holds the rules and procedures needed in almost every modding task. Re
 |---|---|
 | Setting up the environment from scratch | `references/setup.md` |
 | `.uplugin`, `Build.cs`, GameFeatures, AccessTransformers | `references/mod-structure.md` |
-| Modules, lifecycle, hooks, config, subsystems, RCO, commands, content registration | `references/sml-api.md` |
+| Modules, lifecycle, hooks | `references/sml-api.md` |
+| Config, subsystems, RCO, commands, content registration | `references/sml-config-networking.md` |
 | Buildables (actors and lightweight), factories, saves, managers, map | `references/game-classes.md` |
 | Packaging, installing, SMM, logs, crashes, VRAM | `references/build-install-debug.md` |
 | Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md` |

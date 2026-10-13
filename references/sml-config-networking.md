@@ -1,0 +1,102 @@
+# SML: config, subsystems, networking, commands, content
+
+Part of the `satisfactory-modding` skill; the modules, lifecycle and hooks are in `references/sml-api.md`. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
+
+## SML: config, subsystems, networking, commands, content, tools
+
+### Config
+- **Creating:** a Blueprint child of `UModConfiguration` with `FConfigId{ModReference, Category}`.
+  - Properties: `UConfigPropertyBool`, `Float`, `Integer`, `String`, `Class`, `Array`, `Section`.
+  - Flags: `bRequiresWorldReload` only restricts the UI to the menu, `bHidden`, `bAllowUserReset`.
+  - **[source]** Slider in the mod's settings: use the classes `UCP_Integer` and `UCP_Float` from `Configuration/Properties/WidgetExtension/`. They have `WidgetType` (text field, slider `CPI_Slider` / `CPF_Slider`, spin box, and for integers also a list from an enum) and `MinValue` and `MaxValue`. They inherit from `UConfigPropertyInteger` and `UConfigPropertyFloat`, so reading the value from C++ does not change.
+  - Registration through the `ModConfigurations` array, which happens in `INITIALIZATION`.
+- **A configuration can be built entirely in C++, without an editor asset.** Make a non-abstract C++ child of `UModConfiguration` (set `ConfigId`, `DisplayName` in its constructor) and add its class to `ModConfigurations` in the game instance module's constructor. In `DispatchLifecycleEvent`, before calling `Super` in `INITIALIZATION` (SML registers the configurations there and reads the file at once), fill the class default object's `RootSection`: `NewObject` of SML's Blueprint property classes, loaded with `LoadClass<UConfigPropertySection>(nullptr, TEXT("/SML/Interface/UI/Menu/Mods/ConfigProperties/BP_ConfigPropertySection.BP_ConfigPropertySection_C"))` and likewise `BP_ConfigPropertyFloat`, `BP_ConfigPropertyBool`, with the CDO as outer; set `DisplayName`, `Tooltip`, `DefaultValue` and `Value`, and on the `UCP_Float` children `WidgetType` (`CPF_Slider`, `CPF_Spinbox`), `MinValue`, `MaxValue`; add each to `SectionProperties` under its key. These Blueprint children are what carries the menu widget; the bare C++ property classes have none.
+  - Result in the packaged game: `LogSatisfactoryModLoader: Registering configuration /Script/<Mod>.<ConfigClass>`, `LogConfigManager: Display: Successfully loaded configuration from ../../../FactoryGame/Configs/<Mod>.cfg`, and the file written with every key and its default; a value set from code through the root section and `MarkDirty()` was read back from the file after a game restart.
+  - For whole numbers use `BP_ConfigPropertyInteger` (`UCP_Integer`, `CPI_Slider`). A float slider shows two decimals (a grace period of 30 s became 61.47 s after a drag).
+  - In the Mods menu each property shows its `DisplayName` left and the widget right: a slider has its value in a box on the right, a spin box (`CPF_Spinbox`) its value in the middle with arrows, so mixing the two in one list looks inconsistent, and a name longer than about 30 characters runs into the widget at 1440 px width. Keep names short and put the rest in `Tooltip`.
+  - Values changed in the menu are written to the file at once. SML does not clamp a loaded float to `MinValue`/`MaxValue` (they only limit the widget), so check the values read from the file.
+  - Evidence: packaged-game logs of 2026-10-03 20:16 and 20:31 UTC, two screenshots of Main menu -> Mods -> `<Mod>` of the menu, the file after a slider drag (`"<Setting>": 61.466056823730469`). (2026-10-03, game 502094, SML 3.12.0)
+- **Mod settings built in C++ were locked in the pause menu.** Config properties made with `NewObject<T>(Outer, LoadClass(".../BP_ConfigPropertyFloat_C" etc.))` could be changed from the main menu but did not react at all in the pause menu (sliders and bools). `UConfigProperty::bRequiresWorldReload` ("only editable from the main menu") was not set in code, so it came from the class defaults. Setting `Property->bRequiresWorldReload = false` on every property made all of them editable in a world, and the change went to the file (`Saved configuration to ../../../FactoryGame/Configs/<Mod>.cfg`). **[?]** That the Blueprint property classes default the flag to true was not read, only inferred from the fix. Also: a launch straight into a save (`GameDefaultMap` set to the save, as a test loop does) sends "Exit to Main Menu" back into that save, so the main menu cannot be reached in such a run. Evidence: the player's checks before and after the change, the config file. (2026-10-04, game 502094, SML 3.12.0)
+- **File:** `<Game>\FactoryGame\Configs\<ModRef>.cfg`. It is JSON with the field `SML_ModVersion_DoNotChange`. In the game, edit the config in Main menu → Mods → `<Mod>`.
+- **Reading from C++:** right-click the config asset → "Generate C++ Config Struct Header", then `F<Asset>Struct::GetActiveConfig(WorldContext)`. If the config is not registered yet or there is no world, you get a zeroed struct.
+- **Writing:** `GetConfigurationRootSection(FConfigId)` → find the property → set `Value` → `MarkDirty()`. The change is saved after 0.2 s, and the values take effect immediately.
+- **Tip:** expose time budgets and work limits in the config. 1 ms per frame with 139k buildings meant 51 s of work.
+
+```cpp
+const FMyMod_ConfigStruct Cfg = FMyMod_ConfigStruct::GetActiveConfig(GetWorld());
+UConfigManager* CM = GetGameInstance()->GetSubsystem<UConfigManager>();
+const UConfigPropertySection* Root = CM->GetConfigurationRootSection(FConfigId{"MyMod", ""});
+if (auto* P = Cast<UConfigPropertyFloat>(Root->SectionProperties.FindRef(TEXT("Speed")))) { P->Value = 2.f; P->MarkDirty(); }
+```
+- **A config value set from code persists into later game starts.** Setting a property's `Value` on the mod's configuration root and calling `MarkDirty()` writes the mod's config file; the next game start reads that value, not the default. A test that changes a setting for itself therefore leaves it for the next test and for the player: a later test that expected the default failed until it set the value itself. Evidence: two runs set an integer setting to 0 with `MarkDirty`, the next run read 0 at start (`the mod holds 0`), the same run after setting the value explicitly passed. (2026-10-12, game 502094, SML 3.12.0)
+- **A config value changed less than 10 s before the game exits can crash the game on exit.** `UConfigProperty::MarkDirty` only queues the save; `UConfigManager` writes queued configs on a 10 s timer and flushes the rest from `FCoreDelegates::OnPreExit` (`FEngineLoop::AppPreExit`). By then `UModLoadingLibrary`'s mod list is gone, and `SaveConfigurationInternal` → `GetLoadedModInfo` → `LoadMetadataForPlugin` dies with an access violation reading 0x40 (`TSet<…FSMLPluginDescriptorMetadata>::FindIndexByHash`). Seen in eight automated runs that changed a setting from code and exited within seconds, always after the result line. What worked in the mod: calling `UConfigManager::FlushPendingSaves()` (public) from the game instance's subsystem after changing a value from code, so nothing is left for the exit. Evidence: a scenario that crashed this way in three earlier runs exited cleanly after the change. A player who changes a setting in the mod config menu and quits within 10 s may hit the same path in SML itself. **[?]** for the menu path (not tried). (2026-10-13, game 502094, SML 3.12.0)
+
+### Subsystems
+- `AModSubsystem : AFGSubsystem` with the `ReplicationPolicy` field:
+  - `SpawnOnServer`, `SpawnOnServer_Replicate`: everywhere except `NM_Client`,
+  - `SpawnOnClient`: everywhere except a dedicated server,
+  - `SpawnLocal`: everywhere.
+- Override `Init()`, which fires before BeginPlay. Call `Super` in BeginPlay and EndPlay.
+- Registration through `ModSubsystems` or `USubsystemActorManager::RegisterSubsystemActor`.
+- Getting it: `World->GetSubsystem<USubsystemActorManager>()->GetSubsystemActor<T>()`. Returns null until the actor is created or arrives through replication.
+
+**Keeping a subsystem's data in the save**
+- `AModSubsystem` and `AFGSubsystem` do not implement `IFGSaveInterface`. Add it yourself: `class AMySubsystem : public AModSubsystem, public IFGSaveInterface`, override `ShouldSave_Implementation() const`, and mark the fields `UPROPERTY(SaveGame)`. The interface's other native events have empty defaults in the generated header, so override only what you need.
+- SML spawns the subsystem with the fixed name `<ModReference>_<ClassName>` and first looks for an actor with that name loaded from the save (`USubsystemActorManager::SpawnSubsystemActor`). The saved actor with its data is reused instead of a fresh one.
+- Round-tripped exactly through three save/load cycles: `int32`, `double` (bit-exact), `FString` with non-ASCII characters and quotes, `TMap<FString, FString>`, and `TMap<FString, TObjectPtr<AActor>>` holding a train station identifier, a station building, an `AFGTrain` and block signals. After each load every reference pointed to the same live object that `AFGRailroadSubsystem` and `AFGBuildableSubsystem` return.
+- Order on a save load: `PostLoadGame` fires **before** `Init()`, both in frame 0 (measured 13.058 s and 13.163 s), so the `SaveGame` fields already hold the saved values inside `Init()`. On a save without the subsystem's data, or in a new game, `PostLoadGame` is not called and `Init()` sees the defaults.
+- **A `TArray` of `USTRUCT`s with `UPROPERTY(SaveGame)` fields survives save and load too:** object pointers (`TObjectPtr<AFGTrain>`, a plain actor pointer), `TSubclassOf<UFGItemDescriptor>`, numbers and strings came back after each of three loads in one process. An entry whose object is gone from the world comes back with a null pointer, so drop such entries after a load and validate every number read from the save. Evidence: `load 1 of 3 … everything written came back`, and after an object was removed in the save, `Gone from the world: … 1 …` with the entry dropped. (2026-10-04, game 502094, SML 3.12.0)
+- **[?]** Removing a `SaveGame` property from a class does not break older saves (the loader skips an unknown tagged property), but an older mod version reading a newer save loses the field. Keep a `DataVersion` and treat a newer one as read-only. From a code review, not tested. (2026-10-04, game 502094, SML 3.12.0)
+- **[source]** Read-only is not enough for a save of a newer mod version: when an older version of the mod loads such a save and the game autosaves, the subsystem is written again with only the properties the older class knows, because tagged property serialization drops the tags it cannot match on load. The newer version then finds its new fields empty while `DataVersion` still says "new". A way to keep forward compatibility from the first release on: reserve one `UPROPERTY(SaveGame) TArray<uint8> Extension` that the first version never reads or writes, and let later versions put data that must survive a round trip through an older version into it, with their own version number inside (`FMemoryWriter`), leaving the typed fields' meaning unchanged. Complements the entry above about `DataVersion`. From a code review of the subsystem's save fields; not tested with two mod versions. (2026-10-08, game 502094, SML 3.12.0)
+- **[?]** World time starts again at 0 on every load, so a mod that measures time across loads keeps its own clock in a `SaveGame` field and adds the frame time to it. Seen indirectly: such a clock grew 2.0 → 5.6 → 9.0 → 12.9 s over three loads in one process. (2026-10-04, game 502094, SML 3.12.0)
+- `PreSaveGame` fires on every save, also on saves made from code, while `ShouldSave` returns true. With `return DataVersion != 0;` an empty subsystem stays out of the save entirely (no `PreSaveGame` call). Do that in a mod players may install without using: a game saved with the mod installed then carries no trace of it.
+- What a save without the mod does to this data: see "Saves" in `game-classes.md`.
+
+### Networking: client ↔ server RPC (Remote Call Object)
+- `UFGRemoteCallObject` with `Within=FGPlayerController`, one per player.
+- Functions: `UFUNCTION(Server, Reliable)` from client to server and `UFUNCTION(Client, Reliable)` from the server to that one client.
+- Every RCO needs a dummy replicated property and `GetLifetimeReplicatedProps`.
+- Registration: `RemoteCallObjects` on the instance module. Getting it: `PC->GetRemoteCallObjectOfClass<T>()`.
+- The server can check whether the client has a given mod: `USMLRemoteCallObject::IsClientModInstalled` and `GetClientModVersion`.
+- On a listen-server host, a `UFUNCTION(Server, Reliable)` of the local player's remote call object called from server code runs at once, inside the call: its log lines came in the same frame, before the next line of the caller. `PlayerController->GetRemoteCallObjectOfClass<T>()` returned the object about 1.5 s after the world started. Evidence: packaged-game log of 2026-10-03 20:21 UTC, frame counter `[  5]` on the call and on the server function's lines. (2026-10-03, game 502094, SML 3.12.0)
+- **[source]** A server RPC parameter of type `TSubclassOf<UFGItemDescriptor>` arrives from the network as a plain `UClass*`: replication checks only that it is a class, not its base. A client can send any class, and `UFGItemDescriptor::GetForm(Class)` on a class that is not a descriptor reads the wrong CDO or trips `check`. The server-side check `Item && Item->IsChildOf(UFGItemDescriptor::StaticClass())` before any use closes it. From a code review; not tried with a modified client. (2026-10-08, game 502094, SML 3.12.0)
+
+```cpp
+UCLASS() class MYMOD_API UMyRCO : public UFGRemoteCallObject { GENERATED_BODY()
+public:
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override; // Super + DOREPLIFETIME(UMyRCO, bDummy)
+    UFUNCTION(Server, Reliable) void ServerDo(int32 Arg);  // body in ServerDo_Implementation
+    UFUNCTION(Client, Reliable) void ClientGot(int32 R);
+protected: UPROPERTY(Replicated) bool bDummy = true;
+};
+// call: if (auto* R = PC->GetRemoteCallObjectOfClass<UMyRCO>()) R->ServerDo(1);
+```
+
+### Chat commands [source]
+- Class: a subclass of `AChatCommandInstance`. In the constructor set `CommandName`, `Aliases`, `Usage`, `MinNumberOfArguments`, `bOnlyUsableByPlayer`.
+- Logic: override `ExecuteCommand_Implementation(UCommandSender*, const TArray<FString>&, const FString&)`, which returns `EExecutionStatus`.
+- Registration: `mChatCommands`, server only, or `AChatCommandSubsystem::Get(World)->RegisterCommand(ModRef, Class)`.
+
+### Console commands
+- `static FAutoConsoleCommandWithWorldArgsAndOutputDevice X(TEXT("MyMod.Cmd"), TEXT("description"), FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateLambda(...));` works in a Shipping build. Open the console with the `~` key.
+- Write to the console through `Ar.Log` and `Ar.Logf`. `UE_LOG` entries at Display level also show up there.
+
+### Content registration [source]
+- `UModContentRegistry::Get(WorldContext)`: `RegisterSchematic`, `RegisterResearchTree`, `RegisterRecipe`, `RegisterResourceSinkItemPointTable` and the `GetRegistered*` queries.
+- Items are not registered. They bind themselves through registered schematics and research trees. The simplest way is to put them in `mSchematics` and `mResearchTrees` on the world module.
+- The registries close at the world's BeginPlay, so register in `INITIALIZATION` at the latest.
+- A new building consists of a building Blueprint, a building descriptor and a recipe unlocked by a schematic. An example is in ExampleMod.
+- Tags: `UContentTagRegistry`.
+
+### Other useful things from SML
+- `UModLoadingLibrary`: `IsModLoaded`, `GetLoadedMods()` returns `TArray<FModInfo>{Name, Version}` (good as part of a cache key), `GetModLoaderVersion`.
+- `UBlueprintAssetHelperLibrary::FindPluginNameByObjectPath`: which mod a given asset belongs to.
+- `FReflectionHelper::GetPropertyValue`, `SetPropertyValue`, `CallScriptFunction`: access any property by name. Alternative in plain UE: `FindPropertyByName` + `ContainerPtrToValuePtr` and `CallFunctionByNameWithArguments`.
+- Saving your own objects in the save: `IFGSaveInterface` + `UPROPERTY(SaveGame)`, tested on a subsystem ("Subsystems" above). Mod metadata: `UFGSaveSession::SetModMetadata` and `GetModMetadata` [source].
+- SML console variables:
+  - `SML.SkipModCompatibilityCheck`
+  - `SML.ForceAllowCheats`
+  - `SML.DumpBlueprintPatchingResults`
+  - `SML.SkipRemoteModListCheck`
+- The `-WaitForDebugger` parameter works in Shipping [source].
+- Logs from Blueprints: `UBlueprintLoggingLibrary`, writes as `Log<ModRef>`.
