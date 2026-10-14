@@ -11,7 +11,7 @@ It is a self-feeding encyclopedia in two layers:
 
 Every statement carries a marker: verified in the packaged game (no marker), read from source only (**[source]**), or uncertain (**[?]**).
 
-Scripts: `scripts/doctor.ps1` finds the game, the engine and the SML version and warns when they differ from what the skill was verified on, `scripts/check-private.ps1` checks files, commit messages and commits about to be pushed for private data, `scripts/lint-skill.ps1` checks the skill's own structure and links, `scripts/watch-run.sh` and `scripts/watcher-prompt.md` watch automated test runs, `scripts/package-and-install.ps1` packages and installs a mod. `evals/evals.json` holds eight dry-run tasks that check that the skill still sends Claude to the right files.
+Scripts: `scripts/check-project-state.ps1` checks a long project's state document against a size budget and for open items without a pass criterion (`references/project-hygiene.md`), `scripts/doctor.ps1` finds the game, the engine and the SML version and warns when they differ from what the skill was verified on, `scripts/check-private.ps1` checks files, commit messages and commits about to be pushed for private data, `scripts/lint-skill.ps1` checks the skill's own structure and links, `scripts/watch-run.sh` and `scripts/watcher-prompt.md` watch automated test runs, `scripts/package-and-install.ps1` packages and installs a mod. `evals/evals.json` holds eight dry-run tasks that check that the skill still sends Claude to the right files.
 
 ## Versions
 
