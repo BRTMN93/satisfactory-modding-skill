@@ -7,7 +7,7 @@ Part of the `satisfactory-modding` skill. For a mod worked on over many sessions
 - The document every session reads in full at its start has a budget (about 100 KB). Closing a session includes a size check, and a session whose document is over budget archives before it closes.
 - Archiving: move the entries of closed sessions to an archive file. The active file keeps one table row per session (a line with a link to the archive), the open backlog items each with the session that will check it, and the current state.
 - Archiving moves text verbatim by byte or line ranges; a model does not summarise it. Check: the sorted lines of the original equal the sorted lines of active file plus archive, minus the lines added as pointers, and both files are valid UTF-8.
-- `scripts/check-project-state.ps1 -StateFile <file>` reports the size against the budget and the open items that lack a pass criterion (section 2).
+- `scripts/check-project-state.ps1 -StateFile <file>` reports the size against the budget and the open items that lack a pass criterion (section 2). `-OpenPattern <regex>` says what an open item looks like, and `-CriterionPattern <regex>` (default `Passes when:`) the criterion line, so a project that keeps its state document in another language gives its own word.
 
 ## 2. Every open backlog item says when it passes
 
