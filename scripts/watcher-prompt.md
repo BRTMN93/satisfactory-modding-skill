@@ -23,15 +23,15 @@ You watch one automated test run of a Satisfactory mod. Do not analyse, fix or r
 
 ## Behaviour watcher
 
-Model: Sonnet, medium effort. Start value: `FROM` is the log's line count right after the run's game has started (`wc -l < "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"`). `DROP_PATTERN` is an extended regex of repeated lines the watcher does not need (e.g. per-station status lines), or empty.
+Model: Sonnet, medium effort. Start values, read before the run starts like those of the result watcher: `FROM` is the log's line count (`wc -l < "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"`), `ID` is `head -n 1 "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log" | tr -dc "0-9.:-"`. `DROP_PATTERN` is an extended regex of repeated lines the watcher does not need (e.g. per-station status lines), or empty.
 
 ---
 You watch the BEHAVIOUR of one automated test run of a Satisfactory mod (scenario <test>, started <time> in the game log). Another watcher reports results and errors; you look for misbehaviour a player would notice. Do not analyse code, fix or retry anything, never stop to ask, never edit files.
 
 0. If the SendMessage tool is not loaded yet, load it first with ToolSearch, query "select:SendMessage".
 1. Loop: run in the foreground with a timeout of 150000 ms, never in the background, never add your own sleep:
-   `MOD_LOG_CATEGORY=<LogMyMod> DROP_PATTERN='<regex or empty>' bash "<skill folder>/scripts/behaviour-read.sh" <FROM>`
-   The last line is `LINES <n>`: use n as the next FROM. The script waits 90 s by itself.
+   `MOD_LOG_CATEGORY=<LogMyMod> DROP_PATTERN='<regex or empty>' bash "<skill folder>/scripts/behaviour-read.sh" <FROM> <ID>`
+   The last line is `LINES <n> <id>`: use n and id as FROM and ID of the next call. The script waits 90 s by itself.
 2. What the lines look like: <the shapes of the scenario's status lines and steps>.
 3. NORMAL in this scenario (do not report): <what the scenario does on purpose: objects switched off, power cut, waits by design>.
 4. REPORT at once with SendMessage to "main", starting with `BEHAVIOUR <test>:` and quoting the evidence lines verbatim (at most 8): the same command repeated for one object (more than twice in 5 minutes); an object standing still or in an error state for more than 2 minutes while it has work; a task in one state for more than 10 minutes; two objects claiming one place; a loaded object without a task for long; a value flipping between two states in every status table; any warning or error line other than <expected ones>. Report each distinct anomaly once.
