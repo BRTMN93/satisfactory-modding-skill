@@ -111,7 +111,7 @@ A rule that Claude breaks while it is in context has a protection problem, not a
 Barriers in place (`scripts/skill-hooks.cjs`, Node.js), registered in the user's `~/.claude/settings.json`:
 
 ```json
-"PreToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+"PreToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
   "hooks": [{ "type": "command", "command": "node \"<skill>/scripts/skill-hooks.cjs\" guard" }] }],
 "Stop": [{ "hooks": [{ "type": "command", "command": "node \"<skill>/scripts/skill-hooks.cjs\" stop" }] }]
 ```
