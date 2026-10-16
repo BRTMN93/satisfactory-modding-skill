@@ -27,6 +27,8 @@ git clone https://github.com/BRTMN93/satisfactory-modding-skill.git ~/.claude/sk
 
 Claude Code picks the skill up on its own when you work on a Satisfactory mod, or you can call it with `/satisfactory-modding`.
 
+Optional, needs Node.js: register `scripts/skill-hooks.cjs` as a `PreToolUse` and a `Stop` hook in `~/.claude/settings.json` (the block is in `references/learning.md`, section 6). It stops a working chat from editing or committing the skill outside its inbox and reminds it to hand the inbox to folding before it closes.
+
 ## The skill learns from your sessions
 
 Modding knowledge goes stale with every game, SML and engine update, so the skill is built to collect what each session discovers:

@@ -10,7 +10,7 @@ Most of this skill was learned the hard way: a crash, a wasted 47-minute build, 
 
 Write to the inbox of the entry's category (below) as soon as something is established, not at the end of the session. Context gets compressed and evidence gets lost. Core entries go to `learned/findings.md`, domain entries to `learned/<domain>.md`, both in this skill's folder; create the file if it is missing.
 
-**A working session only records.** It writes entries to the inboxes and never edits `references/`, `domains/` or `scripts/` and never commits in the skill folder; a fixed script goes into the inbox as `learned/<script name>.candidate` with a line saying what changed. Folding is a separate step (section 4), done by one session at a time, or by the standing skill chat when there is one (`README.md`). Seen: three working sessions that edited reference files and scripts directly let project names into the skill and left commits that had to be rewritten.
+**A working session only records.** It writes entries to the inboxes and never edits `references/`, `domains/` or `scripts/` and never commits in the skill folder; a fixed script goes into the inbox as `learned/<script name>.candidate` with a line saying what changed. Folding is a separate step (section 4; `scripts/skill-hooks.cjs` enforces this, section 6), done by one session at a time, or by the standing skill chat when there is one (`README.md`). Seen: three working sessions that edited reference files and scripts directly let project names into the skill and left commits that had to be rewritten.
 
 **Pick the category first.** The skill keeps what every mod can need (environment, structure, SML, build, debugging, patterns) in `references/`, the *core*. A topic that only some mods touch is a *domain*: its own folder `domains/<name>/` and its own inbox, so a mod about something else never loads it. Ask: would a mod about something unrelated need this fact?
 - **Yes: core.** A fact found while working in a domain stays core when it holds for any mod (for example a hook rule discovered on trains). Put a one-line pointer in the domain file if the domain depends on it.
@@ -25,6 +25,7 @@ Write to the inbox of the entry's category (below) as soon as something is estab
 - a **confirmation**: a **[source]** or **[?]** statement that has now been tested in the packaged game. The marker can then be removed,
 - a measured number (build time, cost of a call, memory) with the hardware or conditions it was measured on.
 - a **mistake of a script, a prompt or a sub-agent procedure** (a watcher that stopped too early, a closing agent that broke commit messages), with the fix made to the script or prompt, so the next session does not repeat it,
+- a **broken rule of this skill**: Claude did something a rule in `SKILL.md` or a reference file forbids (narrated a run, edited the skill from a working chat, closed without telling the folding chat). It goes under `## Rule violations` in the core inbox and is counted (section 6),
 - a fact that a **code review** or a reading of engine, SML or game source established (a reviewer's note about `FMath`, a widget's events): record it as **[source]** with the `file:line`, or as **[?]**. An uncertain finding is recorded with **[?]**, not withheld.
 
 **Do not record:**
@@ -98,3 +99,22 @@ The skill is public. Before any commit:
 - The history keeps what was ever committed. Never push a commit that the check flagged; if one has been pushed, tell the owner, because removing it needs a rewrite of the history.
 - `local/` is in `.gitignore`. It holds the owner's personal conventions (`local/user.md`) and private strings. Never move anything from `local/` into tracked files.
 - When a finding came from a private project, describe the fact, not the project.
+
+## 6. Rules that keep breaking
+
+A rule that Claude breaks while it is in context has a protection problem, not a wording problem. Moving it higher in `SKILL.md`, making it bold or saying it again does not change the next run; a check outside Claude's judgement does.
+
+- **Record every violation** under `## Rule violations` in `learned/findings.md`, one entry per rule: which rule (file and number or heading), what happened, whether the rule was loaded at that moment, and a count. A second violation of the same rule raises the count of the existing entry instead of adding a new one. Format: `- Rule <file> <n>: <what happened>. Loaded: yes/no. Count: <n>. Evidence: <what showed it>. (<date>, versions unknown)`.
+- **From the second violation the fix is a barrier,** never a new wording: a hook that refuses the tool call, a check in `scripts/lint-skill.ps1`, or a script that does the step so it cannot be done differently. The folding session proposes the barrier to the user; it is built only on their yes.
+- **A barrier counts once it is tested** with the call it must refuse and with a legitimate call it must let through, built from a real tool call, not only from a hand-written example.
+
+Barriers in place (`scripts/skill-hooks.cjs`, Node.js), registered in the user's `~/.claude/settings.json`:
+
+```json
+"PreToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+  "hooks": [{ "type": "command", "command": "node \"<skill>/scripts/skill-hooks.cjs\" guard" }] }],
+"Stop": [{ "hooks": [{ "type": "command", "command": "node \"<skill>/scripts/skill-hooks.cjs\" stop" }] }]
+```
+
+- `guard` (SKILL.md rule 4): a chat whose working folder is not the skill's may write only `learned/` and `local/` in the skill, and may not run `git commit`, `reset`, `checkout`, `restore`, `rebase`, `merge`, `push`, `stash` or `clean` on it. Other shell edits are not covered. The folding chat runs in the skill's folder and is exempt. Any other session that folds on the user's say creates `local/folding.lock` first and deletes it at the end; a lock older than 6 hours counts as absent.
+- `stop` (SKILL.md rule 2): a chat that wrote to `learned/` and leaves uncommitted entries there is sent back once before it closes, to send `fold the findings inbox` (or, without a folding chat in `local/user.md`, to apply section 3).
