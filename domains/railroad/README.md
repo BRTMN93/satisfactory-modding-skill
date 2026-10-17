@@ -12,6 +12,7 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | The game's route search, route graph and costs, what the autopilot does with a route | `domains/railroad/route-search.md` |
 | Signals and track connections, how signals are placed, holding a train at a signal with hooks | `domains/railroad/signals.md` |
 | Giving the autopilot a route of your own, hooking the route search | `domains/railroad/own-routes.md` |
+| Routes of your own in use: parking, cutting, switching under a moving train, cost routes | `domains/railroad/own-routes-in-use.md` |
 | Push-pull trains, two-way single-track lines | `domains/railroad/push-pull-lines.md` |
 | The game's railway windows (station, signal, locomotive), adding a tab to the station window | `domains/railroad/ui-windows.md` |
 | Test layouts: popular track layouts to check, the standard for build lists and schematics (template: `domains/railroad/schematic-template.svg`) | `domains/railroad/test-layouts.md` |
