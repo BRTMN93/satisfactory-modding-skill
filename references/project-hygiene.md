@@ -38,3 +38,14 @@ A rule that exists only in the plan is not enough. Three elements belong into a 
 
 - Bash `printf` turns `\a` in a Windows path (`kopie\archiwum` style, any path with a segment starting with `a`) into a BEL character. Text that holds paths goes into a file or a heredoc, not through `printf`.
 - Mass edits of UTF-8 documents with non-ASCII text work on raw bytes (`sed`/`awk` with `LC_ALL=C`) or with an editor tool that keeps bytes; a Perl `:utf8` layer double-encodes the whole file.
+
+## 8. Context size: compact between tasks
+
+A long context is read again on every call, so its size costs more than the choice of model (cache reads were 60-69% of the cost of the Opus 5.5 chats measured on 2026-10-06, and those chats ran at 355-440k tokens of context on average).
+
+- **When:** between tasks (after a series of runs, after a review, before the next big step) the session checks its context size (in the Claude Code desktop app with `mcp__ccd_session_mgmt__get_usage`). From about **500k tokens**, or earlier when the next task adds a lot, it compacts instead of starting a part b of its work.
+- **Steps:**
+  1. Write a checkpoint file: the state of the criteria with evidence, the table of runs, open bugs and review notes, the next step, the files in progress. Make a local commit of the code, no push.
+  2. Tell the user and give two ready messages to type one after the other: `/compact Keep: <the session's card>, the checkpoint file <path>, open bugs and findings. Drop: logs and tool results.` and `Continue from the checkpoint.` A session cannot run `/compact` itself, and after a compact it does not go on without a message.
+  3. After the compact it reads the checkpoint and its card, then works on.
+- **At most two compacts per session.** When the scope still does not fit, the session closes at a stable point and hands over a part b.

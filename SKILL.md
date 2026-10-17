@@ -47,7 +47,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Automated test runs: watchers (`scripts/watch-run.sh`), series, sub-agents | `references/test-automation.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
-| A mod worked on over many sessions: state document budget, pass criteria, evidence tables, closing checklist (`scripts/check-project-state.ps1`) | `references/project-hygiene.md` |
+| A mod worked on over many sessions: state document budget, pass criteria, evidence tables, closing checklist, compact at 500k tokens of context (`scripts/check-project-state.ps1`) | `references/project-hygiene.md` |
 | Open questions | `references/open-questions.md` |
 | Recording findings, the inboxes, folding them in, privacy check | `references/learning.md` |
 | Pull requests to this skill, updating from upstream, merging contributions (maintainer) | `references/upstream.md` |
