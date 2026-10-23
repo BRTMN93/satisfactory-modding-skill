@@ -119,7 +119,7 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - `AFGHUD::CloseRespawnUI`: the player has finished joining, you can send data from here.
 - `UFGSaveSession::SaveGame(const FString&, FOnSaveGameComplete, void*)`: the "after" hook fires on manual save and on autosave (`<session>_autosave_0..2`). The serialization itself happens at the end of the frame.
 - A static member function that returns a struct by value can be hooked with `SUBSCRIBE_METHOD`; the handler has no `Self` argument, `Scope(...)` returns the original result and `Scope.Override(Result)` replaces it. Verified on the game's route search: `domains/railroad/own-routes.md`, "Hooking the route search".
-- Methods of plain structs (not `UObject`s) can be hooked with `SUBSCRIBE_METHOD` without a sample object, including const methods returning an enum and methods returning a `TWeakPtr` by value. Verified on the railway signalling: `domains/railroad/signals.md`, "Hook targets in the railway signalling".
+- Methods of plain structs (not `UObject`s) can be hooked with `SUBSCRIBE_METHOD` without a sample object, including const methods returning an enum and methods returning a `TWeakPtr` by value. Verified on the railway signalling: `domains/railroad/signal-hooks.md`, "Hook targets in the railway signalling".
 - Placing one blueprint with buildings triggers about 300 hooks. Merge such series into one batch of work.
 
 ```cpp
