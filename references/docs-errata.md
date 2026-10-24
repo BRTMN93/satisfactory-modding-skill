@@ -11,9 +11,9 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 - **Configuration**: docs name the editor menu entries differently from SML 3.12. The SML 3.12 form is in `references/mod-structure.md` (`SMLEditor`). **[source]**
 - **Configuration**: docs show `ReloadModConfigurations(bool bSaveOnSchemaChange)`, `RegisterModConfiguration(FConfigId, Class)`, a colour property and `Mark Property Dirty`; the code has other signatures and no colour property. The SML 3.12 form is in `references/sml-config-networking.md`. **[source]**
 - **Configuration / FAQ "Mod Configuration Files"**: docs say only "Configs folder"; the file path with a category is in `references/sml-config-networking.md`. **[source]**
-- **Registry, ContentTagRegistry**: docs say the Mod Content Registry and Content Tag Registry are game instance subsystems; in the code they are world subsystems. The SML 3.12 form is in `references/sml-config-networking.md`. **[source]**
+- **Registry, ContentTagRegistry**: docs say the Mod Content Registry and Content Tag Registry are game instance subsystems; in the code they are world subsystems. The SML 3.12 form is in `references/sml-content-sessions.md`. **[source]**
 - **Subsystems**: docs say "BeginPlay is called as part of Initialization"; the code calls `DispatchInit()` at registration, before BeginPlay. The SML 3.12 form is in `references/sml-api.md`. **[source]**
-- **SMLChatCommands (cheats)**: docs call `SML.ForceAllowCheats` a session setting; in the code it is a plain CVar. Undecided whether a session setting exists as well; see `references/sml-config-networking.md`, "Cheats in a test run". **[?]**
+- **SMLChatCommands (cheats)**: docs call `SML.ForceAllowCheats` a session setting; in the code it is a CVar. Both exist: a save made with the setting on carries it in its header, and the CVar works from `-ExecCmds`, but a save loaded through `?loadgame=` does not apply the stored setting (tested 2026-10-24); see `references/sml-config-networking.md`, "Cheats in a test run".
 
 ## 2. Satisfactory game systems
 
@@ -27,7 +27,7 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 - **Multiplayer**: docs say `AFGPlayerController::GetRemoteCallObjectByClass`; only `GetRemoteCallObjectOfClass` exists. The SML 3.12 form is in `references/sml-config-networking.md`. **[source]**
 - **Multiplayer**: docs say `FGPlayerController::RegisterRemoteCallObjectOfClass`; the code has `RegisterRemoteCallObjectClass`. The SML 3.12 form is in `references/sml-config-networking.md`. **[source]**
 - **Savegame**: docs say `AFGBuildable` does not return true in `ShouldSave`; the code does, so no override is needed. The SML 3.12 form is in `references/game-classes.md`. **[source]**
-- **ResourceSink**: docs know one table per world module; the code has two tracks (Default and Exploration). The SML 3.12 form is in `references/sml-config-networking.md`. **[source]**
+- **ResourceSink**: docs know one table per world module; the code has two tracks (Default and Exploration). The SML 3.12 form is in `references/sml-content-sessions.md`. **[source]**
 - **Schematic**: docs say the flag is `HasPickedUpItem`; the code has `mRememberPickUp`. The SML 3.12 form is in `references/game-systems.md`. **[source]**
 - **Inventory**: docs say item state is "any kind of actor"; in the code it is an `FFGDynamicStruct`. The SML 3.12 form is in `references/game-systems.md`. **[source]**
 - **FactoryConnectors**: docs say `FactoryGrabOutput`/`FactoryPeekOutput` and a "M Connector" property; neither exists. The SML 3.12 form is in `references/game-systems.md`. **[source]**
@@ -52,7 +52,7 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 - **project_setup ("Generate Sound Banks", "GeneratedSoundBanks folder does not seem to be set")**: docs tell to set Root Output Path and Unreal Audio Routing = Both; the steps only silence a popup, the skill was right. The detail is in `references/setup.md`. (checked on disk)
 - **ReleaseMod**: docs say `RemoteVersionRange` "defaults to your SemVersion, both sides must have the exact same version"; the default is `>=` your version. The skill had it right; see `references/mod-structure.md`. **[source]**
 - **ReleaseMod (example `.uplugin`)**: docs show SML `^3.9.0` and module `LoadingPhase: PostDefault`; outdated. The SML 3.12 form is in `references/mod-structure.md`. **[source]**
-- **ReleaseMod, Alpakit.ini**: docs only show the Release Targets checkboxes; the file format (one `Targets=` line per target) is in `references/mod-structure.md`. **[source]**
+- **ReleaseMod, Alpakit.ini**: docs only show the Release Targets checkboxes; the file format (one `Targets=` line per target, a piped single line selects no target) is in `references/mod-structure.md`; the parsing was run in the packaged game, the Release button itself was not. **[?]** for the button.
 - **ImportingAnotherMod ("Something is Still Wrong")**: docs blame the folder name for `DirectoryNotFoundException`; the cause is that UAT did not find the plugin by name, a folder name alone is not decided. See `references/build-install-debug.md`. **[?]**
 - **StarterProject pages**: docs say take `dev` or `master`, whichever was pushed last; too vague, the skill was right. The comparison to make is in `references/setup.md`. **[source]**
 - **project_setup (building the editor)**: docs build the FactoryGame project in Visual Studio; `Build.bat FactoryEditor Win64 Development` works without a solution, see `references/setup.md`. The docs route is optional; the skill was right. (checked in practice)
@@ -61,7 +61,7 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 
 ## 5. Updating between versions, Unreal Engine
 
-- **UpdatingToNewVersions (3.7)**: docs say "configure release targets" only; the skill's old `Targets=` form was wrong, the right one is in `references/mod-structure.md`. **[source]**
+- **UpdatingToNewVersions (3.7)**: docs say "configure release targets" only; the skill's old `Targets=` form was wrong, the right one is in `references/mod-structure.md` (parsing tested, 2026-10-24).
 - **UpdatingToNewVersions (3.12)**: docs say 99 % of mods need a Game Feature Data asset; a mod with no content to register may live outside GameFeatures, both statements hold. The detail is in `references/mod-structure.md`. **[source]**
 - **CoreRedirect**: docs example uses `MatchSubstring=true`, which the engine deprecates in favour of `MatchWildcard`; the SML 3.12 form is in `references/updating.md`. **[source]**
 - **UpdatingToNewVersions**: docs say `UE4Editor.exe`. The 5.6 CSS editor is `Engine\Binaries\Win64\UnrealEditor.exe`. **[source]** (file on disk)
@@ -75,17 +75,17 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 
 - **ForUsers_DedicatedServerSetup**: **[?]** docs say SMM >= 3.0.0 and ficsit-cli manage server installs (local, SFTP/FTP, SMB); on disk: `%APPDATA%\ficsit\installations.json` lists the server and server mods carry `.smm` markers. The skill said the server has no mod manager, which holds only for a self-built mod that SMM cannot download. See `references/build-install-debug.md`.
 - **TrainSignalGuide (Signals)**: docs say "trains only look for signals on the right-hand side"; outdated in the headers, behaviour of a signal on the other side not tested. The detail is in `domains/railroad/signals.md`. **[source]** for the headers, **[?]** for the behaviour.
-- **TrainSignalGuide (Freight Platforms)**: docs say stations lock for about 27 s and give or take nothing from belts in that time; measurements conflict, needs a test (`domains/railroad/timetable-docking.md`). **[?]**
 - **TrainSignalGuide (Rails)**: docs say rails can cross and "clip" with no adverse effect; true for train movement, for block logic crossing tracks and tracks closer than 6 m share a block (`domains/railroad/signals.md`). Both right. **[source]**
 - **TrainSignalGuide (block spacing)**: docs text reads "1.5 to train lengths apart" (garbled, probably "1.5 to N"). The number is not checked. **[?]**
 - **faq ("Game Screenshots")**: docs say `%UserProfile%\Documents\My Games\FactoryGame\Screenshots`. The test machine has only `FPaths::ScreenShotDir()` = `...\Saved\Screenshots\Windows\`; the Documents folder does not exist. Docs path (player key screenshots) not found. **[?]**
 - **Development_OpenSourceExamples**: the page predates Actor Mixins and the Blueprint hook systems; see `references/tools.md`. **[?]**
-- **ConfiguringMods, faq**: docs fit the code on the save header mod list (`SMLWorldModule.cpp:31-52`), SessionSettings in the map-travel URL and `-EpicPortal -NoSteamClient`; no error found. **[source]**
+- **ConfiguringMods, faq**: docs fit the code on the save header mod list (`SMLWorldModule.cpp:31-52`), SessionSettings in the map-travel URL and `-EpicPortal -NoSteamClient`; no error found. The header does carry `?SessionSettings=` (tested), but a save loaded by `?loadgame=` does not restore them (`references/sml-content-sessions.md`).
 
 ## 7. Where the docs were right and the skill had to change
 
 For the other direction (docs right, skill wrong or incomplete) the corrected places are:
 
-- C++-only root module (`bRootModule = true` in a C++ class) is found by SML: `PluginModuleLoader.cpp:35-60` unions native classes with asset-registry Blueprint classes. **[source]**
+- C++-only root module (`bRootModule = true` in a C++ class) is found by SML: `PluginModuleLoader.cpp:35-60` unions native classes with asset-registry Blueprint classes. Tested for the instance and the world module: every lifecycle phase ran, no two-roots Fatal (`references/sml-api.md`).
 - Wwise 2025.1.6.9117 is the current path; the 2023 version belongs to the older starter project master. **[source]**
 - Server mod manager and the config path with a category (sections 6 and 1 above).
+- Freight Platforms (TrainSignalGuide): docs say stations lock for about 27 s and give or take nothing from belts in that time; right, tested 2026-10-24: solid-cargo belts stand still in every loading and unloading phase (`domains/railroad/timetable-docking.md`).

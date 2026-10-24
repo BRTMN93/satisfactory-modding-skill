@@ -46,7 +46,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Stop the server before changing its mods, the files are locked while it runs.
 
 **Two game instances on one computer (local multiplayer test)** **[?]** (docs.ficsit.app, 2026-10-24, game 513885, SML 3.12.0)
-- The second copy starts with `-CustomConfig= -Multiprocess`, which gives consistent GUIDs and writes no ini files; both switches exist in the engine (`ConfigCacheIni.cpp:884,1287`). It joins with `-ExecCmds="open 127.0.0.1"`; the host sets the session type to IP. For `-loadLatestSave` the save must lie in `SaveGames\<id>\common`. Windows are placed with `-windowed -WinX -WinY ResX ResY`.
+- The second copy starts with `-CustomConfig= -Multiprocess`, which gives consistent GUIDs and writes no ini files (`-Multiprocess` left `GameUserSettings.ini` byte-identical in a single-copy test, `references/testing-launch.md`); both switches exist in the engine (`ConfigCacheIni.cpp:884,1287`). It joins with `-ExecCmds="open 127.0.0.1"`; the host sets the session type to IP. For `-loadLatestSave` the save must lie in `SaveGames\<id>\common`. Windows are placed with `-windowed -WinX -WinY ResX ResY`.
 - Player GUIDs differ with every launch, so a player the save knows by a fixed GUID needs one normal Steam or Epic copy. The docs say only that the identity depends on how the game was launched; whether the second player then gets a fresh character was not confirmed.
 
 **Testing against a local dedicated server**
