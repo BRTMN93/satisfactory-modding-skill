@@ -5,7 +5,7 @@ description: Knowledge and procedures for creating, fixing, building, testing an
 
 # Satisfactory modding
 
-Verified on: game 1.x (changelist 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SML 3.12.0, Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
+Verified on: game 1.x (changelist 513885; entries dated before 2026-10-13 were made on 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SML 3.12.0, Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
 
 ## Four rules for every session, read them first
 
@@ -18,8 +18,8 @@ Verified on: game 1.x (changelist 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SM
 
 | Symptom | Look first |
 |---|---|
-| Crash at start or while loading a save | `CrashContext.runtime-xml` ("Diagnosis" below); two root modules (rule 2); a hook without a filter (rule 3) |
-| The mod is missing from the mod list | `LogSatisfactoryModLoader: Display: <Mod>` in the log; the install folder (rule 8); `GameVersion` and the SML dependency in `.uplugin` (`references/mod-structure.md`) |
+| Crash at start or while loading a save | `CrashContext.runtime-xml` ("Diagnosis" below); two root modules (rule 2); a hook without a filter (rule 3); a `Log<Mod>` category also used by Blueprint log nodes (`references/build-install-debug.md`) |
+| The mod is missing from the mod list | `LogSatisfactoryModLoader: Display: <Mod>` in the log; the install folder (rule 8); `GameVersion` and the SML dependency in `.uplugin` (`references/mod-structure.md`); "module could not be found": a Steam-only build in the EGS game (`references/build-install-debug.md`) |
 | C++ works, assets or Blueprints are missing | `LogPakFile: Mounted Pak file` for the mod; the install folder (rule 8) |
 | A hook or a change has no effect | tested in the editor (rule 1); `Successfully hooked` in the log; hooks installed in `POST_INITIALIZATION` (rule 3) |
 | Installing fails: "Permission denied", "Close the game first" | the game still runs or hangs on exit (`references/testing.md`, "A game that hangs on exit") |
@@ -34,16 +34,16 @@ This file holds the rules and procedures needed in almost every modding task. Re
 
 | Topic | File |
 |---|---|
-| Setting up the environment from scratch | `references/setup.md` |
+| Setting up the environment from scratch; updating a mod to a new game or SML version | `references/setup.md`, `references/updating.md` |
 | `.uplugin`, `Build.cs`, GameFeatures, AccessTransformers | `references/mod-structure.md` |
 | Modules, lifecycle, hooks | `references/sml-api.md` |
 | Config, subsystems, RCO, commands, content registration | `references/sml-config-networking.md` |
-| Buildables (actors and lightweight), factories, saves, managers, map | `references/game-classes.md` |
+| Buildables (actors and lightweight), factories, saves, managers, map; holograms, power, inventories, crates, painting, icons, custom levels, ADA, audio | `references/game-classes.md`, `references/game-systems.md` |
 | Packaging, installing, SMM, logs, crashes, VRAM | `references/build-install-debug.md` |
 | Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md` |
 | UI injection into game windows, widget hooks from C++, popups, searchable lists | `references/ui.md` |
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
-| Tests, launching the game into a save, test mode, release checklist | `references/testing.md` |
+| Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-launch.md` |
 | Automated test runs: watchers (`scripts/watch-run.sh`), series, sub-agents | `references/test-automation.md` |
 | Working conventions for a series of tests: announcing, backlog, review, models per job | `references/test-discipline.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
@@ -62,7 +62,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 
 `learned/findings.md` holds the core findings that are not folded into the references yet, and `learned/<domain>.md` those of a domain. Check the core inbox and the inbox of every domain the task touches, when a topic comes up.
 
-Markers in the files: no marker = verified in practice, **[source]** = read from SML or game code but not tested, **[?]** = uncertain. Before you build code on **[source]** or **[?]**, check it in the code (`Mods/SML/Source/SML`, `Source/FactoryGame/Public`, `<UE-CSS>/Engine/Source`) or on https://docs.ficsit.app. A quick way: find the same API used in SML, the game or another mod that already compiles.
+Markers in the files: no marker = verified in practice, **[source]** = read from SML or game code but not tested, **[?]** = uncertain. Before you build code on **[source]** or **[?]**, check it in the code (`Mods/SML/Source/SML`, `Source/FactoryGame/Public`, `<UE-CSS>/Engine/Source`) or on https://docs.ficsit.app, whose known errors for SML 3.12 are listed in `references/docs-errata.md`. A quick way: find the same API used in SML, the game or another mod that already compiles.
 
 If `local/user.md` exists in this skill's folder, read it at the start. It holds the user's personal conventions (git identity, authorship rules, paths) and overrides the generic advice here.
 
@@ -91,7 +91,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
 7. **UE has no exceptions, and network data is untrusted.**
    - Parse with `LexFromString` or `ParseIntoArray`, because `std::stoul` on a broken value kills the game.
    - Check the result of `TMap::Find` and counters read from an archive.
-   - Keep per-player state in that player's RCO.
+   - Keep per-player state in that player's RCO; it is not saved, so save-persistent data goes into a PlayerState component (`references/sml-config-networking.md`).
 8. **Install with the game closed and into the right folder.** A game feature mod goes to `FactoryGame\Mods\GameFeatures\<Mod>`. In the wrong folder the C++ runs but the asset paks do not mount.
 9. **Shadowed names are compile errors** (`C4456`, `C4458`, because UHT runs with `-WarningsAsErrors`). Packaging takes minutes, so group changes before a build.
 10. **Measure instead of guessing.** Log the duration of work phases, measure the VRAM of the game process alone (`scripts/vram.ps1`) and do the three-loads test: load the save three times in a row, returning to the menu in between. One run is a hint, not a statistic.

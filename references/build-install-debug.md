@@ -16,7 +16,8 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 - Servers: `-server -serverplatform=Win64+Linux`. Linux needs the toolchain from `references/setup.md`, "Linux toolchain".
 
 **Checks in the Shipping build**
-- **[source]** Mod code is compiled with checks active in the Shipping build. The starter project's `Source/FactoryShared.Target.cs` sets `bUseChecksInShipping = UseChecksInShippingOverride`, which is `true` by default (`// MODDING EDIT: we want checks in shipping by default`), and the packaging log says `Building with command line overrides: ChecksInShipping: True (default: false); LinkType: Modular`. So a failed `check()` in a mod stops the packaged game.
+- **[source]** Mod code is compiled with checks active in the Shipping build. The starter project's `Source/FactoryShared.Target.cs` sets `bUseChecksInShipping = UseChecksInShippingOverride` (`:74`), which is `true` by default (`:12`, `// MODDING EDIT: we want checks in shipping by default`), and the packaging log says `Building with command line overrides: ChecksInShipping: True (default: false); LinkType: Modular`. The setting becomes `USE_CHECKS_IN_SHIPPING=1` (engine `UEBuildTarget.cs:5814`) and `DO_CHECK` (`Build.h:305`); ensures follow it (`Build.h:211`). So in a mod both `check()` and `ensure()` are live in the Shipping build, and a failed `check()` stops the packaged game. docs.ficsit.app (Cpp debugging) advises `fgcheck()` because it is on in Shipping (`AssertionMacros.h:377`, always on); that advice is about the game's own code, not about mod code, which is built with the starter project's target rules. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **[?]** Stale editor DLLs: the RunUAT line above passes `-nocompileeditor`, and Alpakit does the same when the editor is running (`AlpakitProfile.cpp:86`), so the cook runs against the editor DLLs that were built last. Observed: a mod's `UnrealEditor-<Mod>*.dll` files were 11 days older than its Shipping DLLs. The risk is for Blueprint assets derived from a `UCLASS` or `UPROPERTY` that was renamed or changed in type; docs.ficsit.app says to rebuild the Development Editor target (`FactoryEditor`) after a change of class structure. No failure was seen. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **Times**
 - First Shipping packaging: 21–47 min. A mod with assets only in a fresh project: 21 min (game compile 297 actions in 700 s, cook 497 s, UnrealPak a few seconds).
@@ -27,6 +28,7 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 - Success: `Result: Succeeded`, `BUILD SUCCESSFUL`, `AutomationTool exiting with ExitCode=0`.
 - Compile error: `Result: Failed (OtherCompilationError)`, `BUILD FAILED`, ExitCode=6.
 - Error details: `%APPDATA%\Unreal Engine\AutomationTool\Logs\<engine path>\UBA-FactoryGameSteam-Win64-Shipping.txt`.
+- `DirectoryNotFoundException: Could not find a part of the path` at the start of packaging: docs.ficsit.app (ImportingAnotherMod) blames a folder name that differs from the mod reference. In the engine, UAT resolves `-DLCName` by plugin name among the plugins it found and falls back to `Plugins/<name>/<name>.uplugin` (`AutomationUtils/ProjectParams.cs:757-765`) **[source]**. So the cause is that UAT did not find a plugin with that name: a wrong `.uplugin` file name, a `.uplugin.disabled`, or a mod outside `Mods/`. Whether a differing folder name alone causes it was not tested **[?]**. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Warnings that appear with a correct game feature mod (also with `ExampleMod`):
   - during the cook and in the game: `LogAssetManager: Warning: Invalid Primary Asset Type FGGameFeatureData:<Mod>: ChangeBundleStateForPrimaryAssets failed to find NameData`,
   - in the game: `LogPluginManager: Warning: Cannot mount plugin localization for '<Mod>' as the plugin isn't explicitly loaded`.
@@ -39,6 +41,10 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 
 A mod with assets only has no `Binaries` directory in the zip.
 
+**Release packaging (Alpakit Release) [source].** The release profile is the same `PackagePlugin` call with `-clientconfig=Shipping -serverconfig=Shipping -utf8output -DLCName=<Mod> [-build, if the mod has modules] -platform=Win64 -server -serverplatform=Win64+Linux -nocompileeditor -installed -merge` and **no `-Target`** (`AlpakitProfile.cpp:68-113`, `Alpakit.cpp:224-236`, `PackagePlugin.cs:126-158,173-213`). The targets come from `Config/Alpakit.ini` (`references/mod-structure.md`).
+- Without `-Target` the `Windows\` folder holds the files for both clients: `FactoryGameSteam-...` and `FactoryGameEGS-...` DLLs and `.modules` files.
+- Output in `<Project>\Saved\ArchivedPlugins\<Mod>\`: one zip per target, `<Mod>-<Platform>.zip` with the files at the zip root, and the merged `<Mod>.zip` with `Windows\`, `WindowsServer\` and `LinuxServer\`. Upload the merged one, the largest. Seen on disk in a packaged zip. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
 **An interrupted packaging run** leaves the engine's `dotnet.exe` processes running. Kill only those:
 ```powershell
 Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePath -like '<UE-CSS>\*' } | % { Stop-Process -Id $_.ProcessId -Force }
@@ -46,7 +52,7 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 
 **One copy of the sources.** If you have several copies (working directory, build project, git clone), sync them and check with `diff -rq --strip-trailing-cr`. Before a commit or PR, make sure the repo has exactly the code you built and tested.
 
-**Packaging for the Windows dedicated server.** `RunUAT.bat PackagePlugin -project=<FactoryGame.uproject> -clientconfig=Shipping -serverconfig=Shipping -utf8output -DLCName=<Mod> -build -server -serverplatform=Win64 -noclient -nocompileeditor -installed -merge -Target=FactoryServer`. The zip `Saved\ArchivedPlugins\<Mod>\<Mod>.zip` gets a `WindowsServer/` folder; copy its contents into `<server>\FactoryGame\Mods\SML` for SML and `<server>\FactoryGame\Mods\GameFeatures\<Mod>` for a game feature mod. `-merge` overwrites the same `<Mod>.zip` the client packaging wrote, so the client package has to be installed (or copied away) before the server build. The server has no mod manager: SML is packaged the same way from the same starter project (SML server package about 26 s; the first server build of a starter about 6 min, later ones 1–2 min). Evidence: server log `LogSatisfactoryModLoader: Display: <Mod>: <version>` and `Version check passed ... 513885`. (2026-10-21, game 513885, SML 3.12.0)
+**Packaging for the Windows dedicated server.** `RunUAT.bat PackagePlugin -project=<FactoryGame.uproject> -clientconfig=Shipping -serverconfig=Shipping -utf8output -DLCName=<Mod> -build -server -serverplatform=Win64 -noclient -nocompileeditor -installed -merge -Target=FactoryServer`. The zip `Saved\ArchivedPlugins\<Mod>\<Mod>.zip` gets a `WindowsServer/` folder; copy its contents into `<server>\FactoryGame\Mods\SML` for SML and `<server>\FactoryGame\Mods\GameFeatures\<Mod>` for a game feature mod. `-merge` overwrites the same `<Mod>.zip` the client packaging wrote, so the client package has to be installed (or copied away) before the server build. **[?]** SMM 3.0 and later and ficsit-cli can manage a dedicated server install (local, SFTP/FTP or SMB) for mods published on ficsit.app (docs only). Seen on disk: `%APPDATA%\ficsit\installations.json` lists the server folder, and the server's `Mods` carry `.smm` markers and a `<profile>-lock.json`. A self-built mod is not on ficsit.app, so it still has to be copied by hand (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app; `.smm` and `installations.json` seen on disk). SML is packaged the same way from the same starter project (SML server package about 26 s; the first server build of a starter about 6 min, later ones 1–2 min). Evidence: server log `LogSatisfactoryModLoader: Display: <Mod>: <version>` and `Version check passed ... 513885`. (2026-10-21, game 513885, SML 3.12.0)
 
 ## Installing in the game, SMM, backups
 
@@ -61,6 +67,20 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - Check the log for the line `LogPakFile: Mounted Pak file '<path>', mount point: '<mount>'`.
 - After installation, compare the unpacked build with the directory in the game: `diff -rq`.
 
+**The same mod in two folders [source].** When a mod lies under both `Mods\<Mod>` and `Mods\GameFeatures\<Mod>`, the engine logs `A version of the '<Mod>' plugin has already been enabled (<path>); prioritizing that over the newly discovered version` and uses the first one it found (`PluginManager.cpp:1249`). A stale copy therefore hides the new one: after moving a mod into `GameFeatures`, delete the old install folder. (2026-10-24, game 513885, SML 3.12.0)
+
+**Alpakit "Copy to game" and the PackagePlugin switches [source]**
+- Alpakit's copy deletes `<Game>\FactoryGame\Mods[\GameFeatures]\<Mod>` completely and then copies the staged mod (`PackagePlugin.cs:165-171`), and it needs `<Game>\FactoryGame` to exist (`:92-97`). Files put by hand into the installed mod folder are lost.
+- The same from RunUAT: `-CopyToGameDirectory_Windows=<GameDir>` (copies by itself to `Mods\GameFeatures\<Mod>` or `Mods\<Mod>`; without `-merge` it builds only the target whose exe lies in `<GameDir>`, `PackagePlugin.cs:52-66,139-153`). `-LaunchGame_Windows=Steam|SteamDS|EpicEA|EpicExp|EpicDS|EpicDSExp|Custom` starts the game, with `-CustomLaunchPath_Windows=` and `-CustomLaunchArgs_Windows=` for `Custom`. The `Steam` type is `steam://rungameid/526870`, which carries no arguments, so only `Custom` can pass `-ini:...` or other switches (`LaunchGame.cs`).
+- `scripts/package-and-install.ps1` copies with `Copy-Item -Force` into the existing folder and never deletes, so a file removed from the mod stays installed (`scripts/package-and-install.ps1`, line 50). Clear the folder first when files were removed. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+**Load errors for the wrong build or a missing dependency [source]** (strings from the engine, `PluginManager.cpp`; the EGS case was not reproduced)
+- Alpakit picks the single client target from the exe in the game folder (`FactoryGameSteam.exe` or `FactoryGameEGS.exe`) when it does not merge (`PackagePlugin.cs:139-154`). A Steam-only build in an EGS game fails with `Plugin '<Mod>' failed to load because module '<M>' could not be found` (`:2708`).
+- `... does not appear to be compatible with the current version of the engine` (`:2712`).
+- `This project requires the '<Mod>' plugin, which has a missing dependency on the 'SML' plugin` (`:2606`): SML is not installed. (2026-10-24, game 513885, SML 3.12.0)
+
+**[?] After switching a game branch or a major update** the game may refuse to start with mods; disable them first (SMM "Mods off", or the `-DisablePlugins` switch described in `references/testing.md`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
 **Satisfactory Mod Manager (SMM, ficsit-cli)**
 - Mods installed by SMM have a `.smm` marker file. SMM does not touch a manual install without the marker: the mod survived a switch to a profile that did not include it.
 - **Consequence: a manually installed mod loads in every SMM profile**, including the "SML only" profile and even when it has `enabled: false` in the profile. A test profile is clean only after you move such mods out of `Mods`.
@@ -69,6 +89,8 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
   - `%APPDATA%\ficsit\profiles.json` and `installations.json`,
   - `%LOCALAPPDATA%\ficsit\registry.db` and `downloadCache`,
   - `<Game>\FactoryGame\Mods\<profile>-lock.json`.
+  - Seen on disk (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app): `%APPDATA%\SatisfactoryModManager\settings.json`; the SMM log `%LOCALAPPDATA%\SatisfactoryModManager\logs\SatisfactoryModManager.log`; `%LOCALAPPDATA%\ficsit\downloadCache\<ModRef>_<ver>_<Target>.zip`, one archive per target (`Windows`, `WindowsServer`, `LinuxServer`), where a mod zip can also be placed by hand; `installations.json`, which lists dedicated servers too. `<profile>-lock.json` has a `targets` map with hash and link per mod.
+  - **[?]** From the docs only: a window that opened off-screen is fixed with `windowPosition` x and y set to 0 in `settings.json`; the cache folder can be changed in SMM's settings; SMM's "generate debug info" makes a zip with the game, SML and SMM logs, the usual attachment for a help request.
 
 **Backup** of a working, self-built mod:
 - Copy the whole mod directory outside the game folder, add a note on how to restore it, and remember the branch with the sources.
@@ -94,6 +116,8 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - `LogGame: World Serialization (save|load): N seconds`
 - `LogPakFile: Mounted Pak file ...`
 
+**SML log categories for diagnosis [source]** (all defined with `DEFINE_LOG_CATEGORY*` in SML): `LogBlueprintHookManager` and `LogBlueprintHookingCodeGen` (a Blueprint hook that does not attach, and the bytecode), `LogWidgetBlueprintHookManager`, `LogContentRegistry` (errors about a frozen registry), `LogSubsystemManager`, `LogConfigManager`, `LogChatCommand`, `LogSessionSettingsRegistry`, `LogGameMapRegistry`, `LogModNetworkHandler`. `scripts/watch-log.ps1` can match these categories. (2026-10-24, game 513885, SML 3.12.0)
+
 **Did the mod add errors?** The fastest check is to compare the set of errors with the previous log.
 - A game with only SML has constant errors in the log unrelated to mods (DLSS `kFeatureDLSS_G`, `t.MaxFPS`, Niagara, MVVM in `BPW_JoinGame`, `Array_Sort` in SML's `Widget_SessionSettings`).
 - Loading a freshly created save (new game, only SML installed) also logs several `LogSave: Error: Object Reference '<id>::Persistent_Level:PersistentLevel.BP_CreatureSpawner<N>' is contained inside of the World Partition Cell ...` lines, and the same for `BP_Spline<N>`. Exclude them when comparing error sets.
@@ -101,11 +125,20 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 
 **Logging in the mod**
 - Own category: `DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Display, All)`.
+- **[source]** Keep the compile-time verbosity `All` for a category named `Log<ModRef>`. SML creates `Log<PluginName>` for the Blueprint log nodes with compile-time `All` (`BlueprintLoggingLibrary.cpp:16-21,45-50`); a C++ category of the same name with another compile-time verbosity (`Log`, `Display`...) in a mod that also uses Blueprint log nodes makes the engine kill the game on the second definition (`LogSuppressionInterface.cpp:455-459`). docs.ficsit.app says the same. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - One category for several modules: `DECLARE_LOG_CATEGORY_EXTERN` with the export macro of the lowest module (`MYMODCORE_API DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Log, All);`) in its public header, and `DEFINE_LOG_CATEGORY` in its `.cpp` file. The other modules depend on that module and use the same category.
 - Macros that append `__LINE__`.
 - Debug logs behind a `constexpr bool`, enabled by a rebuild. One run with full logging produced a 49 MB log.
 - Measure the phases of work: `FPlatformTime::Seconds()` at the start and a log like "X done in %.2f s, %d items" at the end.
 - A temporary build that logs every event (add, remove, task start and cancel) quickly explains player reports.
+
+**Editor and packaging logs.** The editor writes `<Project>\Saved\Logs\FactoryGame.log` (plus `UnrealPak-backup-*.log`; seen on disk), packaging `%APPDATA%\Unreal Engine\AutomationTool\Logs\` (see "Build and packaging"). docs.ficsit.app also names `%LOCALAPPDATA%\UnrealEngine\<ver>\Saved\Logs`, which did not exist here **[?]**. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+**Attaching a debugger**
+- Process: `FactoryGameSteam-Win64-Shipping.exe` (EGS: `FactoryGameEGS-...`). docs.ficsit.app (Cpp debugging) says `FactoryGame-Win64-Shipping.exe`; the install has only `<Game>\Engine\Binaries\Win64\FactoryGameSteam-Win64-Shipping.exe` and its `.pdb` (26 MB), the game's pdbs are in `FactoryGame\Binaries\Win64`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **[source]** `-WaitForDebugger` attaches late, in SML's init (`SatisfactoryModLoader.cpp:150-160`). The engine skips its structured-exception guard only when `-NoExceptionHandler` is given or a debugger is present when `WinMain` starts (`LaunchWindows.cpp:240-269`); after a late attach the guard stays on and SML logs a warning (`SatisfactoryModLoader.cpp:177`), so an access violation does not reach the debugger. Pass both `-WaitForDebugger` and `-NoExceptionHandler`. Side effect: the crash reporter is bypassed, so that run leaves no `UECC-Windows-*\CrashContext.runtime-xml`.
+- **[source]** Ensures and errors break into an attached debugger (`SatisfactoryModLoader.cpp:164-173`, `OnHandleSystemEnsure/Error` calls `DebugBreak`). An `ensure()` in mod code is live in Shipping (see "Checks in the Shipping build"), so it stops the debugger.
+- **[?]** From the docs, Visual Studio: after the first attach use "Reattach to Process"; untick Debug > Options > Debugging > General > "Require source files to exactly match"; a Function Breakpoint `ClassName::FunctionName` works on vanilla functions through the shipped pdbs, "most of the time". (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **Crash:** the directory `%LOCALAPPDATA%\FactoryGame\Saved\Crashes\UECC-Windows-<id>_0000\` contains:
 - `CrashContext.runtime-xml` with the fields `<ErrorMessage>` and `<CallStack>`,

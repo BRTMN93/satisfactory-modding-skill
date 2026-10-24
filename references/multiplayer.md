@@ -9,11 +9,12 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Dedicated server: `FPlatformProperties::IsServerOnly()` or `IsRunningDedicatedServer()`. Wrap rendering code in `#if !UE_SERVER`.
   - `IsServerOnly()` is a constant of the server build, so it is false in the client build even when the client runs without a renderer (`-nullrhi`). **[source]** GPU work that also runs on the client should check `FApp::CanEverRender()` (`domains/rendering/render-targets.md`, "A render target (any texture) has no resource when the game cannot render").
 - Authority: `HasAuthority()`.
+- **[?]** Do not use `GetPlayerController(0)` or `GetFirstPlayerController` for game logic: a dedicated server has no local player, and split screen breaks it. Take authority from the actor or the game state, and use `GetOwnerPlayerController()` (also `GetOwnerCharacter`) inside an RCO (`UFGRemoteCallObject`, `FGRemoteCallObject.h:29-35`, names checked in the header). The advice is generic Unreal plus docs.ficsit.app. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **The client does not have distant buildings**
 - The server sends the client a snapshot through an RCO: the client asks through `Server`, the server answers through `Client` in chunks of about 2 KB so it does not clog the link.
 - Send the request after `AFGHUD::CloseRespawnUI`, not in the PlayerController's BeginPlay, because packets get lost during joining.
-- Incremental changes can be broadcast through `NetMulticast, Reliable` on the subsystem. **[?]** `SpawnLocal` + `bReplicates` worked in one mod, but the SML documentation says `SpawnLocal` does not replicate. Choose `SpawnOnServer_Replicate`.
+- Incremental changes can be broadcast through `NetMulticast, Reliable` on the subsystem. **[?]** `SpawnLocal` + `bReplicates` worked in one mod, but the SML documentation says `SpawnLocal` does not replicate. Choose `SpawnOnServer_Replicate`. **[source]** `ModSubsystem.h:18-19` says `SpawnLocal` never replicates, and `SetReplicates(true)` is called only for `SpawnOnServer_Replicate` (`SubsystemActorManager.cpp:29-32`): a `SpawnLocal` subsystem is an independent actor on each side, its instances are never linked across the network (`:49`). The "worked in one mod" above and this reading conflict; a test is needed to settle which holds. (2026-10-24, game 513885, SML 3.12.0)
 
 **Serialization traps**
 - Do not set `ArIsNetArchive` when serializing a large array into your own buffer, because it limits array sizes.
@@ -21,13 +22,35 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 
 **Mod versions on players' machines**
 - `RequiredOnRemote` and `RemoteVersionRange` are checked on join.
+- The remote mod-list check runs in both directions (since SML 3.9); see `references/mod-structure.md`, `RequiredOnRemote`.
 - Do not change the network data format or RPC signatures without need. That way the old and new version of the mod play together.
 
 **Host-only features** (e.g. a cache) must skip clients and the dedicated server.
 
+**Conditional property replication (properties sent only to some connections)** **[source]**
+- The recipe, read in the game headers (`Replication/FGConditionalReplicationInterface.h:42-125`; an example in `FGBuildableFactory.h:563-565`):
+  - the class implements `IFGConditionalReplicationInterface` and holds `UPROPERTY(Replicated, Transient, meta=(FGPropertyReplicator)) FFGConditionalPropertyReplicator mPropertyReplicator;`;
+  - it implements `GetConditionalReplicatedProps`, which is called once on the CDO and must hold no conditional logic, with `FG_DOREPCONDITIONAL(Class, Prop)` or `FG_DOREPCONDITIONAL_WITH_NOTIFY(Class, Prop, OnRep_X)`;
+  - it implements the pure virtual `IsPropertyRelevantForConnection`, and calls `InvalidatePropertyRelevancyCache()` when the relevancy changes;
+  - the property carries `meta=(FGReplicated)` or `meta=(FGReplicatedUsing=OnRep_X)`, not `Replicated`.
+- A mismatch between the `FGReplicatedUsing` meta and the macro is `LogNet: Fatal` in editor builds only.
+- An inventory is made conditional with `UFGInventoryComponent::SetReplicationRelevancyOwner(this)` on the authority in `BeginPlay` (`FGInventoryComponent.h:556`; `UFGPowerInfoComponent` has the same at `:201`). The owner must implement the interface; buildables do through `AFGBuildableFactory`.
+- docs.ficsit.app (Conditional Replication page) leaves out `mPropertyReplicator` and `IsPropertyRelevantForConnection`, and says not to mark the inventory pointer `SaveGame`. The game does mark it: `UPROPERTY(SaveGame) mInputInventory` (`FGBuildableManufacturer.h:257`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
 **Test on a dedicated server.** It is free on Steam and runs on the same computer. It has not been done yet for the mods this skill was built from, so it is the first candidate for hidden bugs.
 
+**Dedicated server and mod configs** **[?]** (docs.ficsit.app, 2026-10-24, game 513885, SML 3.12.0)
+- There is no remote configuration window. Copy the client's `FactoryGame\Configs\*.cfg` into the server's `FactoryGame\Configs`; a mismatch can change behaviour. The folder exists on a server install and holds the mods' `.cfg` files (checked on disk).
+- The server's new-save screen cannot set Mod Savegame Settings: create the save on a client and upload it.
+- Never copy a client's `Mods` folder to a server (client binaries fail there); use the `WindowsServer` package of the mod.
+- Stop the server before changing its mods, the files are locked while it runs.
+
+**Two game instances on one computer (local multiplayer test)** **[?]** (docs.ficsit.app, 2026-10-24, game 513885, SML 3.12.0)
+- The second copy starts with `-CustomConfig= -Multiprocess`, which gives consistent GUIDs and writes no ini files; both switches exist in the engine (`ConfigCacheIni.cpp:884,1287`). It joins with `-ExecCmds="open 127.0.0.1"`; the host sets the session type to IP. For `-loadLatestSave` the save must lie in `SaveGames\<id>\common`. Windows are placed with `-windowed -WinX -WinY ResX ResY`.
+- Player GUIDs differ with every launch, so a player the save knows by a fixed GUID needs one normal Steam or Epic copy. The docs say only that the identity depends on how the game was launched; whether the second player then gets a fresh character was not confirmed.
+
 **Testing against a local dedicated server**
+- The full list of the server's HTTPS API calls (and of the UDP Lightweight Query on the game port) is in the game's own file `<Game>\CommunityResources\DedicatedServerAPIDocs.md`; both APIs share the game port (default 7777). The folder also holds `FactoryGame.usmap`, `Headers.zip` and `Docs`. Checked: the file exists and lists `HealthCheck`, `PasswordlessLogin`, `PasswordLogin`, `QueryServerState`, `GetAdvancedGameSettings`; the UDP part was not read. (2026-10-24, game 513885, docs.ficsit.app)
 - A local dedicated server for tests starts with `FactoryServer.exe -log -unattended -multihome=127.0.0.1` (listens on localhost only). The HTTPS API is at `https://127.0.0.1:7777/api/v1` with a self-signed certificate that stays the same across restarts (`curl -k`). Functions used: `HealthCheck`, `PasswordlessLogin` + `ClaimServer` once, then `PasswordLogin` (admin), `ApplyServerOptions` with `FG.DSAutoPause` = `False` (else an empty server pauses), `UploadSaveGame` as multipart (`data` JSON part with `SaveName` and `LoadSaveGame: true`, `saveGameFile` part), `Shutdown`. Windows PowerShell 5.1 breaks a JSON body passed to `curl.exe` (BOM when piped, quotes stripped from native arguments): write the body to a file and pass `--data-binary @<file>`, and `-F "data=<<file>;type=application/json"`. Evidence: claim, upload, load and shutdown working from a script. (2026-10-21, game 513885)
 - A save loaded on the dedicated server (API `LoadGame`/`UploadSaveGame` with load, or `UGameplayStatics::OpenLevel(<map>, true, "?loadgame=<save>")` in server code) is a hard travel: every client is dropped with `NetworkFailure: FailureReceived, Error: 'Host closed the connection.'` and goes to the main menu. A client test across server loads has to rejoin. Evidence: client log at each server load. (2026-10-21, game 513885)
 - Joining a dedicated server from C++ without clicks (client, module `FactoryDedicatedClient`, only in non-server targets: `if (Target.Type != TargetRules.TargetType.Server)` in `Build.cs`, code under `#if !UE_SERVER`): `UFGServerManager` (game instance subsystem) `GetServerByHostname(<host>, <port>)` finds a server already in the player's Server Manager list (added and certificate accepted once by hand). `UFGServerObject::Join()` alone does nothing useful because the game polls a server's state only while a state listener is registered: register an `IFGServerStateListener` (a plain C++ class implementing it is enough, `_getUObject` returns any owning UObject such as the game instance) with `RegisterStateListener` and call `OnServerActivated()`. Then drive it by `GetComplexState()`: `GameRunning_Connected_Client`/`_Admin` → `Join()`; `GameRunning_ConnectionFailed`/`NoGame_ConnectionFailed` → `AttemptServerAPIConnection()` (after a server load the API refuses connections for a moment and the game does not retry by itself); `Connected_NonAuthenticated`/`GameRunning_NotConnected_CompatibleVersion` → `Authenticate(EPrivilegeLevel::Client, true)`. Evidence: client joined in 5 s from the main menu, and again about 40 s after each server load, with no clicks. (2026-10-21, game 513885, SML 3.12.0)

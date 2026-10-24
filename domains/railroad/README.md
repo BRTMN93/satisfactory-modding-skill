@@ -21,6 +21,8 @@ Most of this domain was first read from game headers (changelist 491125, later c
 
 New findings of this domain go to `learned/railroad.md`.
 
+**[?]** Open-source mods to read for rail work (listed on docs.ficsit.app; sources not opened): Better Train Collision (replaces the locomotive collision at runtime, Blueprint only); Cable Choices+ (holograms that snap to spline rails, a Rail Power Box that reuses the vanilla UI). The docs page predates the Actor Mixin and Blueprint hook systems: see `references/tools.md`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
 ## Pitfalls
 
 - **Other mods that drive trains.** Dynamic Train Routes (mod reference `DynamicTrainRoutes`, tested 1.3.2) and `DynamicTimeTable` (tested 1.4.2) write timetables and routes themselves. A mod that also writes them can detect them at start with `UModLoadingLibrary::IsModLoaded` (`references/sml-api.md`) and stand aside: with both loaded, the tested mod logged `<Mod> is inactive: DynamicTrainRoutes, DynamicTimeTable loaded`, ran 0 cycles in 5 s and refused a change from its window, in 2 runs. (2026-10-04, game 502094, SML 3.12.0)

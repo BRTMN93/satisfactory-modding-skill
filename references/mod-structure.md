@@ -6,32 +6,51 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 
 **Plugins in the starter project** (the `Mods/` directory):
 - `SML`: runtime.
-- `SMLEditor`: Blueprint Hook and Mixin editors, "Generate C++ Config Struct Header", recipe editor and linter.
+- `SMLEditor`: Blueprint Hook and Mixin editors, "Generate C++ Config Struct Header", recipe editor and linter. docs.ficsit.app calls the config menu entries "Generate C++ Configuration Header" and "Regenerate Configuration Structs"; in SML 3.12 they are "Generate C++ Config Struct Header" and "Regenerate Config Struct" (`SMLEditorModule.cpp:42,48`).
+  - **[source]** More tools in `Mods/SMLEditor/Content`: Mass Asset Reparenter (`/SMLEditor/Utils/AssetAction_MassReparent`; right click assets, Scripted Asset Actions; save first), Mod Configuration Previewer (`/SMLEditor/MenuPreview/`), an ADA message extractor and a research tree editor. Files seen, tools not run. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - `Alpakit`: mod wizard, packaging, copying to the game and launching.
 - `AccessTransformers`: access to private members of the game.
 - `WwisePatches`: Wwise patches, applied automatically at build (`references/setup.md`, "Project location first, then the Wwise integration").
 - `GameFeatures/ExampleMod`: example mod.
 
 **Where mods live:** `Mods/<Mod>` or `Mods/GameFeatures/<Mod>`.
-- Alpakit creates game feature mods in `GameFeatures`, and packaging requires them to stay there (`PackagePlugin.cs:245-247`).
-- A game feature mod needs a `UFGGameFeatureData` asset named like the plugin, in the root of `Content`.
-- The `.uplugin` needs `"BuiltInInitialFeatureState": "Active"`.
+- Alpakit creates game feature mods in `GameFeatures`, and a game feature mod has to stay there: packaging chooses the output folder from where the plugin lies (`PackagePlugin.cs:231-247`), and the game takes it as a game feature only from `Mods\GameFeatures`.
+- **[source]** A game feature is for a mod with content to register. A code-only library mod without content may live in `Mods/<Mod>`: packaging only picks the output path by folder (`PackagePlugin.cs:231-244`), and the Alpakit templates "Blueprint Library (Advanced)" and "C++ & Blueprint Library (Advanced)" have no `game_feature` (`Alpakit/Templates/templates.json`). The engine gives a plugin without content a transient GameFeatureData (`GameFeaturePluginStateMachine.cpp:3220`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- A game feature mod needs a `UFGGameFeatureData` asset named like the plugin, in the root of `Content`. The engine tries `/<Plugin>/GameFeatureData.GameFeatureData` first, then `/<Plugin>/<Plugin>.<Plugin>` (`GameFeaturePluginStateMachine.cpp:3225-3228`) **[source]**.
+- The `.uplugin` needs `"BuiltInInitialFeatureState": "Active"` and no `ExplicitlyLoaded`. **[source]** A hand-written game feature `.uplugin` must follow this: Alpakit's template leaves `ExplicitlyLoaded` out on purpose (comment at `GameFeatureModTemplateDescription.cpp:35`: with it the paks are never loaded). This is also why `Cannot mount plugin localization for '<Mod>' as the plugin isn't explicitly loaded` is harmless. An imported source mod becomes a game feature when it has an asset named like the mod reference in `Content`; its folder then goes under `Mods\GameFeatures`. (2026-10-24, game 513885, SML 3.12.0)
+
+**Asset folders and the GameFeatureData scan rules [source].** A mod's data assets of the types below are found only if the `UFGGameFeatureData` asset has a rule (`PrimaryAssetTypesToScan`, engine `GameFeatures/Public/GameFeatureData.h`) whose folder covers the asset. The Alpakit wizard writes these rules into the new mod's GameFeatureData (`Mods/Alpakit/Config/DefaultAlpakit.ini:3-9`, applied in `Alpakit/Private/GameFeatureModTemplateDescription.cpp:49-57`):
+- `FGSchematic`: `/<Mod>/Schematics`; `FGResearchTree`: `/<Mod>/Schematics/Research`,
+- `FGUserSetting`: `/<Mod>/Settings`; `FGMessage`: `/<Mod>/Narrative`,
+- `FGRemoteCallObject`: `/<Mod>/Buildable` and `/<Mod>/-Shared/Blueprint`; `FGIconLibrary`: `/<Mod>/-Shared/Blueprint`,
+- `FGChildInputMappingContext`: `/<Mod>/Inputs`.
+- An asset of such a type in any other folder is silently ignored: a message never plays, a setting, RCO or child input context is not found, with no log error. A mod not made by the wizard needs the rules added by hand in the GameFeatureData asset; the simplest source is a fresh "Blueprint Only" Alpakit template.
+- The base game scans 12 types (starter project `Config/DefaultGame.ini:140-154`): FGSchematic, FGResearchRecipe, FGResearchTree, FGUserSetting, FGMessage, FGIconLibrary, FGRemoteCallObject, FGGamePhase, FGOnboardingStep, FGResourceNodeData, FGChildInputMappingContext, FGNoise. docs.ficsit.app lists 7. The example mod's GameFeatureData scans FGUserSetting, FGMessage, FGIconLibrary and FGChildInputMappingContext.
+- A mod module that registers the content in code is the alternative when content is conditional or only some assets should load. The GameFeatureData action "Add Components" was reported broken as of game 1.2 **[?]**; "Add World Partition Content (Content Bundle)" is not used by mods **[?]**. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **`.uplugin`: fields that SML reads** (`ModLoadingLibrary.cpp:24-100`):
 - `SemVersion`: the mod version. On release, bump it together with `VersionName`.
 - `GameVersion`: range of game changelists, e.g. `">=491125"`. The current value is in `Source/FactoryGame/currentVersion.txt`.
 - `Plugins[].SemVersion`: required version of a dependency, e.g. SML `"^3.12.0"`. A mismatch of a dependency or of the game is Fatal outside the editor.
+- `Plugins[]` entry fields **[source]**: `Enabled` is mandatory (engine `PluginReferenceDescriptor.cpp:151`). `Optional: true` makes SML skip the version check when that plugin is absent (`ModLoadingLibrary.cpp:240-243`). `BasePlugin: true` marks a non-mod engine plugin; Alpakit then omits `SemVersion` (`ModMetadataObject.cpp:161-190`; `SML.uplugin` uses it for EnhancedInput). SMM does not try to download `BasePlugin` entries **[?]** (docs only). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - `RequiredOnRemote`: `true` by default. `false` means a client-only or server-only mod.
-- `RemoteVersionRange`: `>=SemVersion` by default.
+  - **[source]** The mod-list check runs in both directions (since SML 3.9): the server checks the client's list and the client checks the server's (`SMLNetworkManager.cpp:143-194`). A client-only mod that keeps `RequiredOnRemote: true` is rejected by a server that does not have it. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- `RemoteVersionRange`: `>=SemVersion` by default (`ModLoadingLibrary.cpp:20,36`, `CreateRangeWithMinVersion(Version)`). docs.ficsit.app (ReleaseMod) says the default is "exactly the same version" on both sides; in SML 3.12 it is `>=SemVersion` (`ModLoadingLibrary.cpp:20,36`).
 - `FriendlyName`, `Description`, `CreatedBy`, `DocsURL`, `SupportURL`: shown in the mod list.
-- A mod reference is the plugin name. Icon: `Resources/Icon128.png`.
+- `Version` (integer, the engine's field) next to `SemVersion` **[source]**: SML ignores `Version` when `SemVersion` parses (`ModLoadingLibrary.cpp:18,28-36`). The Alpakit **Edit** dialog (mod list) writes the `.uplugin` and sets `Version` to the major of `SemVersion` on every edit (`ModMetadataObject.cpp:123-133`); it also offers one-click fixes when the SML dependency or `GameVersion` is out of date (`AlpakitEditModDialog.cpp:45-101`, `AlpakitReleaseWidget.cpp:14-150`). docs.ficsit.app says the two should match; whether ficsit.app checks that is unknown **[?]**. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- A mod reference is the plugin name.
+- **Mod icon [source]:** SML loads only `<Mod>\Resources\Icon128.png` and does not check its size (`ModLoadingLibrary.cpp:386-397`); docs ask for a square image of at least 128 px. The file reaches the package only through `Config/PluginSettings.ini` with `[StageSettings]` and `+AdditionalNonUSFDirectories=Resources` (the Alpakit templates and the example mod have it; SML adds `Config`). Without it the log says `LogSatisfactoryModLoader: Error: Failed to load icon for plugin <Mod>` and the mod list shows a placeholder. The same key ships any other extra folder; add a line, do not replace the existing one, or the icon is lost. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **Packaging edits the staged `.uplugin` [source]:** it adds `"GameFeature": true` (`PackagePlugin.cs:291-303`, also seen in a packaged zip) and rewrites the `BuildId` in every `.modules` file to `SML` (`:279-281`). Do not write `GameFeature` in the source `.uplugin`. SMM and manual installers use that field to choose `Mods\GameFeatures\<Mod>` or `Mods\<Mod>` (`PackagePlugin.cs:297`); the folder name has to equal the plugin name, and SML itself goes to `Mods\SML`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Version range syntax: `^ ~ >= <= < > =`, `1.2.x`, hyphen range (`SemVersion.h`).
+  - **[source]** `^` with major 0 stops at the next minor: `^0.1.2` means `<0.2.0`, `^0.0.3` means `<0.0.4` (`SemVersion.cpp:133-167`). Start a mod at `1.0.0`, or the range of your own mod is narrower than expected.
+  - **[source]** A prerelease version such as `1.0.0-beta.1` parses (`SemVersion.cpp:6,693`). SMM never installs a prerelease by itself **[?]** (`references/publishing.md`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 ```json
 "SemVersion": "1.0.0", "VersionName": "1.0.0", "GameVersion": ">=491125", "RequiredOnRemote": true,
 "Modules": [{ "Name": "MyMod", "Type": "Runtime", "LoadingPhase": "Default" }],
 "Plugins": [{ "Name": "SML", "Enabled": true, "SemVersion": "^3.12.0" }]
 ```
+docs.ficsit.app (ReleaseMod) shows an example `.uplugin` with SML `^3.9.0`, `GameVersion >=365306` and module `LoadingPhase: PostDefault`; in SML 3.12 / game 513885 use SML `^3.12.0`, a `GameVersion` from `currentVersion.txt`, and `Default`, which is what Alpakit writes (`AlpakitEditModDialog.cpp:319`, `ModWizardDefinition.cpp:103`); only SML itself loads in `PostDefault`.
 
 **`Build.cs`**
 - Start from `Mods/Alpakit/Templates/CPPAndBlueprintBlank/Source/PLUGIN_NAME/PLUGIN_NAME.Build.cs`.
@@ -48,16 +67,33 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - The compiler enforces the boundary between modules. A module that does not have `FactoryGame` in its `Build.cs` dependencies cannot include a game header: `fatal error C1083: Cannot open include file: 'FGTrain.h': No such file or directory`. This can be used to enforce that pure logic does not depend on game classes. Such a module needs only the dependencies `Core` and `CoreUObject`.
 - Shared log category: see "Logging in the mod" in `references/build-install-debug.md`.
 
+**Third-party libraries in a mod** (docs.ficsit.app, `Development_Cpp_thirdparty`)
+- Module `Mods/<Mod>/Source/ThirdParty/<Lib>Library/<Lib>Library.Build.cs` with `Type = ModuleType.External`, headers in `inc`, libraries in `lib/<Platform>`, and the module added to the mod's `PublicDependencyModuleNames`. SML does the static-library variant itself (`SML.Build.cs:48-60`).
+- **[source]** DLLs or shared objects are staged with `RuntimeDependencies.Add("$(BinaryOutputDir)", Path.Combine(LibFolder, "*.dll"))` (variable `UEBuildModule.cs:787`, overload `ModuleRules.cs:404`).
+- **[source]** Do not pass STL objects across the DLL boundary: UE replaces `new`/`delete`, and the crash reads `FMallocBinned2 Attempt to realloc an unrecognized block ... canary` (`MallocBinned2.cpp:898`).
+- **[?]** A library that produces many warnings needs `AllowWindowsPlatformTypes.h`, `THIRD_PARTY_INCLUDES_START/END` and `push_macro("check")` with `#undef check` around its headers. Two mods with a third-party module of the same name clash in one project; put the library in a dependency mod. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
 **AccessTransformers** (`Config/AccessTransformers.ini`, section `[AccessTransformers]`) give access to private and protected members of the game:
 - `Friend=(Class="AFoo", FriendClass="UBar")`
 - `Accessor=(Class="AFoo", Property="mX")`: generates `GetmX()` and `SetmX()`.
   - Tested with `Accessor=(Class="AFGBuildableTrainPlatformCargo", Property="mFreightCargoType")`: `Class` takes the name with its `A`/`U` prefix, and the getter is a member, called as `Platform->GetmFreightCargoType()`.
   - Adding the line did not force a rebuild of the game module: the next Alpakit packaging took 166 s, about as long as one without the change.
   - For a `UPROPERTY` field that only needs reading, reflection works without AccessTransformers: `FindFProperty<FEnumProperty>(Class, TEXT("mX"))->ContainerPtrToValuePtr<void>(Object)`.
+  - **[source]** `Accessor` handles `UPROPERTY` fields only; a function or a non-`UPROPERTY` member gets nothing (`AccessTransformers.ubtplugin/Types/AccessTransformers.cs:83`, getter and setter at `:81-100`). A protected or private function needs `Friend=(Class="AFGResourceScanner", FriendClass="UMyClass")`. docs.ficsit.app (OreScanner) calls `GenerateNodeClustersAccessor`; no such symbol exists in the headers, and the real `GenerateNodeClusters()` is a protected non-`UFUNCTION` (`Equipment/FGResourceScanner.h:114`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+  - **[source]** A `Friend` or `Accessor` line that matches no class (typo, or a class that is gone after a game update) fails the build in UHT: `Unused friend/accessor access transformer ... requested by <plugin>` (`AccessTransformers/.../HookCodeGenExporter.cs:17-32`). `Class` is matched with or without the prefix (`AFGFoo` or `FGFoo`, `HookClassGeneration.cs:43`); the `A`/`U` form is the one tested above. (2026-10-24, game 513885, SML 3.12.0)
+  - **[?]** docs.ficsit.app: fields declared only by forward declaration and engine classes are not supported; `Friend` and `Accessor` need a C++ rebuild, while the editor-only types below apply at editor start without one; after adding a line the compiler may still say "cannot access private member" until any line of the ini is touched (no timestamp tracking). This conflicts with nothing observed above (the 166 s run concerned the game module, not the mod's own module) but the mod module's recompile after an added line was not checked; it needs a test. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Editor only: `BlueprintReadWrite=(Class="/Script/FactoryGame.FGSchematic", Property="mUnlocks")`, `BlueprintCallable=(...)`, `BlueprintType=(Struct)`.
+  - **[source]** `EditAnywhere=(Class="/Script/FactoryGame.IconData", Property="...")` makes struct fields that the game declares `VisibleDefaultsOnly` editable (`AccessTransformersSubsystem.cpp:251-254`; the example mod's ini has four such lines for `FIconData`). A short class name in these editor lines still works but logs a "deprecated class specification" warning (`AccessTransformersSubsystem.cpp:45,81,119`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **Other config files**
-- `Config/Alpakit.ini`: `[ModTargets] Targets=Windows|WindowsServer|LinuxServer`, that is, which targets to package for.
+- `Config/Alpakit.ini`: which targets to package for, one `Targets=` line per target:
+  ```
+  [ModTargets]
+  Targets=Windows
+  Targets=WindowsServer
+  Targets=LinuxServer
+  ```
+  **[source]** The file is read as an array (`ModTargetsConfig.cpp:11-14`). A single piped value such as `Targets=Windows|WindowsServer|LinuxServer` matches no target, and because the list is not empty all three targets are turned off. A missing file or an empty list turns all three on. (2026-10-24, game 513885, SML 3.12.0)
 - Gameplay tags: `Config/Tags/*.ini`.
 
 **Line endings and BOM:** in a repo with `core.autocrlf=true`, files in git have LF, and on disk they may have CRLF. Scripts that patch code must preserve the line ending style and the UTF-8 BOM. Read files as `utf-8-sig` and count bytes, because `grep -c $'\r'` in Git Bash can lie.

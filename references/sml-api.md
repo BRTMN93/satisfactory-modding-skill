@@ -16,7 +16,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Instance modules go through all three phases at once at game start, before any world.
 - World modules get `CONSTRUCTION` and `INITIALIZATION` at `OnActorsInitialized`, and `POST_INITIALIZATION` at the world's BeginPlay.
 - In a world module's `POST_INITIALIZATION`, buildings from the save are already registered.
-- `AModSubsystem::Init()` fires before the world's BeginPlay. Set "loading in progress" flags there.
+- `AModSubsystem::Init()` fires before the world's BeginPlay. Set "loading in progress" flags there. **[source]** The subsystem manager calls `DispatchInit()` at registration, which is the world module's `CONSTRUCTION`; `AModSubsystem::BeginPlay` calls it only if that has not happened yet (`SubsystemActorManager.cpp:11-43`, `ModSubsystem.cpp:9-14`). Warning: docs.ficsit.app says a subsystem's BeginPlay is called as part of initialization; in SML 3.12 / game 513885 `Init()` is the early hook and comes first (`SubsystemActorManager.cpp:11-43`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Measured on a save load:
   1. `AModSubsystem::Init`,
   2. the world module's `CONSTRUCTION` and `INITIALIZATION` right after `LogGame: World Serialization (load)`,
@@ -30,7 +30,8 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - `POST_INITIALIZATION`: things that depend on other mods, installing hooks.
 
 **Arrays filled in the root Blueprint**
-- Instance module: `ModConfigurations`, `BlueprintHooks`, `ClientBlueprintHooks`, `WidgetBlueprintHooks`, `GlobalItemTooltipProviders`, `GameMaps`, `SessionSettings`, `RemoteCallObjects`. On a dedicated server the "Client" ones are skipped.
+- Instance module: `ModConfigurations`, `BlueprintHooks`, `ClientBlueprintHooks`, `WidgetBlueprintHooks`, `GlobalItemTooltipProviders`, `GameMaps`, `SessionSettings`, `RemoteCallObjects`. On a dedicated server the "Client" ones are skipped **[source]** (`GameInstanceModule.cpp:56`, `!IsRunningDedicatedServer()`; docs.ficsit.app says the same). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- Warning: docs.ficsit.app lists key-bind arrays (`RegisterModKeyBind`, `RegisterModAxisBind`) and a Subsystem Holder registry for the instance module. In SML 3.12 they do not exist: `GameInstanceModule.h:25-80` has no such arrays, `RegisterModKeyBind` appears nowhere in SML, `UModSubsystemHolder` is only forward-declared. `ModSubsystems` is on the world module, as below. A mod extends the game's input through `UFGChildInputMappingContext` (a primary data asset with `mParentContext`, game header `Input/FGChildInputMappingContext.h`). **[source]** (header read only). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - World module: `ModSubsystems` (spawned in `CONSTRUCTION`), `mSchematics`, `mResearchTrees`, `mChatCommands`, resource sink point tables, `mContentTagAdditionsTable`.
 - A world module's `ModSubsystems` can be set in the constructor of the C++ class (`ModSubsystems.Add(AMySubsystem::StaticClass())`), and the Blueprint child inherits that value. Then only **Root Module** needs ticking in the root Blueprint. The subsystem is spawned on a save load: a log line from its `AModSubsystem::Init()` override appears before the world module's phases. (2026-10-02, game 502094, SML 3.12.0)
 
@@ -39,7 +40,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Exactly one root of each type per mod, otherwise Fatal.
 - Do not set `bRootModule` in the C++ class. The Blueprint child would inherit it and you would get two roots.
 - The order of mods within a phase is undefined.
-- **Root modules must be Blueprint assets, because SML looks for them only in the asset registry.** `PluginModuleLoader.cpp:39-41` calls `FindBlueprintAssetsByTag(..., "bRootModule", {"True"})`. A C++ class with `bRootModule = true` would not be found at all, so this pattern (a C++ class without the flag plus a Blueprint child with the flag) is the only way, not just good practice. Blueprint roots work: in the game the instance module logged `CONSTRUCTION`, `INITIALIZATION` and `POST_INITIALIZATION`.
+- **A root module can also be pure C++ [source].** `FPluginModuleLoader::FindRootModulesOfType` joins the native classes (`FindNativeClassesByType`) with the Blueprint assets tagged `bRootModule` (`FindBlueprintAssetsByTag`), skips Abstract, newer-version and deprecated classes, and keeps those whose class default object has `bRootModule` (`ModLoading/PluginModuleLoader.cpp:36-60`). The owning plugin of a `/Script/<Module>.<Class>` path comes from the module name (`BlueprintAssetHelperLibrary.cpp:121-135`). So a non-abstract C++ class that sets `bRootModule = true` in its constructor is a root; this was not run in the game. The recommended pattern (a C++ class without the flag plus a Blueprint child with the flag) stays right for a different reason: a flagged non-abstract C++ class **and** a flagged Blueprint child are two roots, which is Fatal (`GameInstanceModuleManager.cpp:51-55`, `WorldModuleManager.cpp:80`). Blueprint roots work: in the game the instance module logged `CONSTRUCTION`, `INITIALIZATION` and `POST_INITIALIZATION`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - **A validation error on the first save of a module Blueprint is normal.** Saving before ticking **Root Module** gives this in the editor log: `AssetCheck: Error: [AssetLog] …Root….uasset: At least one module of this type was found in this mod, but none were marked as root. Fix by marking at least one as root.` After ticking the flag and saving again, validation passes without an error. The flag is in **Class Defaults**, in the **Details** panel, named **Root Module**.
 
 **Finding other mods' modules**
@@ -74,12 +75,13 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 
 **Macros**
 - `SUBSCRIBE_METHOD(&Class::Method, Handler)`: any function, globally.
-- `SUBSCRIBE_METHOD_VIRTUAL(&Class::Method, SampleObject, Handler)`
-- `SUBSCRIBE_UOBJECT_METHOD(Class, Method, Handler)`: the sample object is `GetDefault<Class>()`.
+- `SUBSCRIBE_METHOD_VIRTUAL(&Class::Method, SampleObject, Handler)`: **[source]** hooks the function body found in the sample object's vtable, so an override that does not call `Super` is not hooked; hook that class too (`NativeHookManager.cpp:103-110`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- `SUBSCRIBE_UOBJECT_METHOD(Class, Method, Handler)`: the sample object is `GetDefault<Class>()` (`NativeHookManager.h:625`).
 - Variants: `*_AFTER`, `*_EXPLICIT(Signature, ...)` for overloaded functions, `UNSUBSCRIBE_METHOD` and `UNSUBSCRIBE_UOBJECT_METHOD`.
+  - Warning: docs.ficsit.app names `SUBSCRIBE_METHOD_MANUAL` for overloads. In SML 3.12 only the `_EXPLICIT` variants exist (`NativeHookManager.h:589-658`). **[source]** (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **Handlers**
-- "Before": `void(TCallScope<Sig>& Scope, Class* Self, Args...)`. Static and free functions have no `Self`.
+- "Before": `void(TCallScope<Sig>& Scope, Class* Self, Args...)`. Static and free functions have no `Self`. For a `const` member function `Self` is `const Class*`, otherwise the handler does not compile **[source]** (`NativeHookManager.h:385`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
   - `Scope(Self, Args...)` calls the original.
   - `Scope.Cancel()` skips the original (void functions). `Scope.Override(v)` skips it and sets the result (functions with a result).
   - Simply returning from the handler without calling `Scope` still runs the original.
@@ -91,6 +93,7 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
   - Static and free functions are not affected (`HookInvokerExecutorGlobalFunction::ApplyCall` returns by value the normal way), and neither are scalar results (`ApplyCallScalar`).
   - Evidence: SML 3.12.0, `Mods/SML/Source/SML/Public/Patching/NativeHookManager.h`, `ApplyCallUserTypeByValue`. (2026-10-03, SML 3.12.0)
 - Handlers run in registration order.
+- **[source]** `Cancel()` and `Override(...)` also skip every later "before" handler of every mod: the chain goes on only while the call is forwarded (`bForwardCall`, `NativeHookManager.h:143-215`). "After" handlers always run. Another mod's `Cancel` can silently hide your "before" hook. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Lambdas live until the end of the game. Capture `this` and values, never local variables by reference.
 
 **Limits**
@@ -150,7 +153,11 @@ SUBSCRIBE_METHOD(FCanvas::GetBatchedElements, [](auto& Scope, FCanvas* Self, /* 
 - "Blueprint Hook (SML)" and "Blueprint Mixin (SML)" assets.
 - Hook definition (`FBlueprintHookDefinition`): `TargetFunction`, `HookFunction`, type `InsertionHook` or `RedirectHook`, place `BeforeTarget`, `AfterTarget` or `ReplaceTarget`, target specifier (`FunctionEntry`, `FunctionExit`, `ReturnValue`, `FunctionCall`, `PropertyAccess` and others).
 - Registration: the `BlueprintHooks` and `ClientBlueprintHooks` arrays or `UBlueprintHookManager::RegisterBlueprintHook`. The target must be a function defined in a Blueprint.
-- Per-actor state: `UBlueprintActorMixin`.
+- Per-actor state: `UBlueprintActorMixin` (Actor Mixin).
+  - **[source]** `bEnableMixinTick` defaults to false (`BlueprintHookingTypes.h:80-82`). The mixin's BeginPlay runs after the actor's, its EndPlay before. `Self` is the mixin; the actor is "Mixin Target". Find a mixin with `UBlueprintActorMixin::GetActorMixin(Actor, Class)`. Mixin hooks target the actor class chosen in the asset. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+  - **[?]** Docs only: mixins work only on Blueprint-implemented actors (not on drop pod loot), and `SaveGame` properties of mixin components on level actors are not loaded, so keep that data in a mod subsystem. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **[source]** The old hook systems are dead in 3.12. C++ hooks on Blueprint functions (the `Bind on BPFunction` macros) were removed in 3.11, and `BlueprintSCSHooks` entries "no longer do anything" (`GameInstanceModule.h:76-81`, `DeprecatedLegacyHookingTypes.h`). A mod ported from older SML loses them silently; Actor Mixins replace the SCS hooks. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **[?]** Blueprint hook assets, docs only: the implementation function cannot use latent nodes; a registered hook cannot be unregistered, so gate it on a flag; parameters map to the hook function's variables by exact name, and `By Ref` lets the hook modify them; a `bool ReturnValue` set to False cancels the rest of the function; hooks of UI Blueprints belong in `ClientBlueprintHooks`, or they error on a dedicated server. `-DumpBlueprintPatchingResults` as a launch argument prints the patched bytecode (the switch is read in `BlueprintHookManager.cpp:368`, **[source]**). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Widgets: `UWidgetBlueprintHookData` in `WidgetBlueprintHooks`.
 - **Widget hooks from C++, without an editor asset** (verified on the station, signal and locomotive windows, 2026-10-02, game 502094, SML 3.12.0):
   - Create the data with `NewObject<UWidgetBlueprintHookData>(GetTransientPackage())`.

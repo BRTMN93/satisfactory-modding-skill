@@ -1,0 +1,64 @@
+# Game systems: holograms, items, power, painting, icons, levels, messages, audio
+
+Part of the `satisfactory-modding` skill. Markers: no marker = verified in the packaged game (nothing in this file is), **[source]** = read from SML or game code, not tested, **[?]** = uncertain or from docs.ficsit.app only. Replace the parts in `<...>` with your own. Buildables, factories, saves, managers and the map are in `references/game-classes.md`. Header paths are relative to the game's `Source/FactoryGame/Public`.
+
+Everything here was read in the game headers and the SML source or on docs.ficsit.app; nothing was run in the packaged game. Where the docs name a function that does not exist, the line says so: copying a docs name is a compile error. Each system here is a short starting note; a system that gathers findings of its own becomes a domain (`references/learning.md`, section 1), and its section here then shrinks to a pointer.
+
+## Holograms
+- **[source]** A custom hologram derives from `AFGBuildableHologram`. The order of the hooks: `PreConfigureActor`, `ConfigureActor` (no components yet), `ConfigureBuildEffect`, spawn, `ConfigureComponents`, `BeginPlay` (`Hologram/FGBuildableHologram.h:318-376`). `DoMultiStepPlacement` returns true when the placement is finished (`FGHologram.h:230`).
+- **[?]** `TrySnapToActor` is not called while `IsValidHitResult` is false, and the location is then not updated by itself (docs only; the starter project has no .cpp).
+- **[source]** A hologram that should stay visible but red (cannot be placed) returns true from `IsValidHitResult` and calls `AddConstructDisqualifier(UFGCDxxx::StaticClass())` (`FGHologram.h:395`, classes in `FGConstructDisqualifier.h`). The text field of a custom disqualifier is spelled `mDisqfualifyingText` (`FGConstructDisqualifier.h:41`). The header comment of `IsValidHitResult` (`FGHologram.h:147-150`) says "return true if invalid", while the name, the comment of `OnInvalidHitResult` (`:201`) and the docs say false means hidden. Not decided **[?]**.
+- **[source]** Upgrades: override `TryUpgrade` (set the upgraded actor and the hologram transform) and `GetUpgradedActor` (`FGHologram.h:163,314`).
+- **[?]** Belt, pipe and power connections carry over only when the location and the names are the same; inventories and the recipe do not (copy them in `ConfigureComponents` with `CopyFromOtherComponent`); docs only.
+- **[source]** A custom buildable inside blueprints needs `AFGBlueprintHologram::RegisterCustomBuildableVisualization(Class, delegate)` (`FGBlueprintHologram.h:103`).
+- **[source]** Build modes, and where the signatures differ from the docs:
+  - `GetSupportedBuildModes` takes `TArray<TSubclassOf<UFGBuildGunModeDescriptor>>&` (`FGHologram.h:255`).
+  - `OnBuildModeChanged` takes a `TSubclassOf<UFGHologramBuildModeDescriptor>` (`:273`).
+  - The hologram has `IsCurrentBuildMode` (`:266`) and `GetDefaultBuildGunMode`, but no `GetCurrentBuildMode` or `SetBuildMode`; `CycleBuildMode(int32)` is on `AFGBuildGun` (`Equipment/FGBuildGun.h:457`).
+  - docs.ficsit.app (Hologram page) shows `UFGHologramBuildModeDescriptor` in the list, no parameter in `OnBuildModeChanged`, `GetCurrentBuildMode`/`SetBuildMode` on the hologram and `hitResult.Actor.Get()`. The last one does not compile on UE 5.6: `FHitResult` has only `GetActor()` (`Engine/Classes/Engine/HitResult.h:211`).
+
+  (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+## Crafting recipes, in C++
+- **[source]** `UFGRecipe` fields: `mManufactoringDuration` (the game's typo), `mManualManufacturingMultiplier`, `mProduct`, `mIngredients`, `mProducedIn` (`TSoftClassPtr<UObject>`), `mDisplayName` and `mDisplayNameOverride` (`FGRecipe.h:149-181`). docs.ficsit.app (Crafting page) writes "M Manufacturing Duration": that is the editor label, not the C++ name. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+## Factory connections and power
+- **[source]** A buildable hands items to its neighbour through `AFGBuildable::Factory_GrabOutput(connection, FInventoryItem& out, float& out_OffsetBeyond, type)` and `Factory_PeekOutput(connection, TArray<FInventoryItem>&, type) const` (`Buildables/FGBuildable.h:693-701`). They are called when the connection has `mForwardPeekAndGrabToBuildable`. `UFGFactoryConnectionComponent` has `mDirection`, `mConnectorClearance` and `mForwardPeekAndGrabToBuildable` (`FGFactoryConnectionComponent.h:236-264`). docs.ficsit.app (Factory Connectors page) says `FactoryGrabOutput`/`FactoryPeekOutput` and a property "M Connector" (Solid, Liquid, Gas); neither exists in game 513885. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **Power API.** **[source]** `AFGBuildableFactory::GetPowerInfo()` returns a `UFGPowerInfoComponent` with `SetTargetConsumption`, `SetMaximumTargetConsumption`, `SetBaseProduction`, `SetDynamicProductionCapacity`, `HasPower`, `IsFuseTriggered` and `GetActualConsumption` (`FGPowerInfoComponent.h:79-181`). `UFGPowerConnectionComponent` has `mMaxNumConnectionLinks`, `mIsHiddenConnection` (train rails) and `mAllowDaisyChaining` (`FGPowerConnectionComponent.h:162-188`). The docs say to change power settings inside the factory tick **[?]**; that tick runs on worker threads (`references/game-classes.md`, "Factories"). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+## Items, inventories and crates
+- **[source]** An inventory item carries its state as `FFGDynamicStruct ItemState` (`HasState()`, `GetItemState()` on `FInventoryItem`, `FGInventoryComponent.h:43-53`). The actor-based state is legacy. docs.ficsit.app (Inventory page) says the state is "any kind of actor"; in game 513885 it is a dynamic struct. (2026-10-24, game 513885, docs.ficsit.app)
+- **[?]** Converting an `FInventoryStack` to an `FItemAmount` and back drops the item state (equipment ammo or fuel, settings), so keep the stack when you move items. The docs say so; the types exist in the headers, the loss itself was not tested. (2026-10-24, game 513885, docs.ficsit.app)
+- **[source]** Spawning a crate: `AFGItemPickup_Spawnable::SpawnInventoryCrate(World, Items, Location, FSpawnInventoryCrateParameters)` (`FGItemPickup_Spawnable.h:105-128`; a Blueprint-callable overload with a world context exists too). Server only. Building a crate by hand: call `AFGCrate::SetAllowAddingItems(true)` first (`FGCrate.h:100-106`) and `UFGInventoryLibrary::ConsolidateInventoryItems` before `GetMinNumSlotsForItems`, which assumes a consolidated array (`FGInventoryLibrary.h:125-140`). (2026-10-24, game 513885, docs.ficsit.app)
+- **[source]** An item that must count as "picked up" for a schematic dependency has `UFGItemDescriptor::mRememberPickUp` (`Resources/FGItemDescriptor.h:401`, `RememberPickUp()` at `:266`); the dependency class is `UFGItemPickedUpDependency` with `TMap<item, int32> mItems` (`AvailabilityDependencies/FGItemPickedUpDependency.h:41`). docs.ficsit.app (Schematic page) calls the flag `HasPickedUpItem`; there is no such flag in the headers. (2026-10-24, game 513885, docs.ficsit.app)
+- **Clipboard (copy and paste of machine settings).** **[source]** A buildable implements `IFGFactoryClipboardInterface` (`FGFactoryClipboard.h:21-36`): `CanUseFactoryClipboard`, `GetClipboardMappingClass` (returns `TSubclassOf<UObject>`), `CopySettings` (returns an `UFGFactoryClipboardSettings*`, an abstract base) and `PasteSettings(settings, AFGPlayerController*)`. Examples: `FGBuildableLightSource.h:84-88`, `FGBuildableManufacturer.h:110-114`. docs.ficsit.app (Clipboard page) names `GetClipboardSettingsClass`, which does not exist. (2026-10-24, game 513885, docs.ficsit.app)
+
+## Painting (colour)
+- **[source]** The custom-data floats of a painted mesh: 0-2 primary colour RGB, 3-5 secondary colour RGB, 6 has power, 7 pattern, 8 material, 9 metallic, 10 roughness, 11-13 light colour (reserved); up to 18 are usable (`BuildableColorConstants::EColorDataIndices`, `CDI_Max = 19`, `FGFactoryColoringTypes.h:39-54`). 
+- **[?]** A mesh must use the game's existing paintable materials, not new ones; a new material must tick the Instanced Static Mesh usage (docs only).
+- **[source]** A C++ class that implements `IFGColorInterface` must override its pure virtuals: `SetCustomizationData_Native`, `ApplyCustomizationData_Native`, `GetCanBeColored_Native`, `IsColorApplicationDeferred` and the deferred-apply pair (`FGColorInterface.h:23-73`). (2026-10-24, game 513885, docs.ficsit.app)
+
+## Icon libraries (signs, map stamps)
+- **[source]** An icon library is a data asset of type `FGIconLibrary`; only `mIconData` is shown and used. The asset type needs a scan rule in the mod's game feature data (`references/mod-structure.md`). `EIconType::ESIT_MapStamp` puts the icon on the map UI (`FGIconLibrary.h:20-30`). **[?]** Docs only: each icon needs an ID that is unique in the library and never reused (hide an icon with `Hidden`, do not delete it); textures are square with alpha; saves refer to an icon by `FPersistentGlobalIconId{IconLibrary path, IconID}`. docs.ficsit.app (Icon Library page) writes `ESIT_Map_Stamp`, which does not exist. Its four `EditAnywhere` access transformers on `/Script/FactoryGame.IconData` are right (the struct is `FIconData` with `ID, IconType, ItemDescriptor, DisplayNameOverride`; compare the example mod's `Config/AccessTransformers.ini`). (2026-10-24, game 513885, docs.ficsit.app)
+
+## Custom levels
+- **[source]** A custom map is a `USMLGameMapData` (fields `MapAsset`, `MapName`, `MapDescription`, `MapIcon`, `StartingLocations` with a `PlayerStartTag`) listed in `GameMaps` of the instance module. The registry works by map asset: a second registration of the same map is logged as `LogGameMapRegistry: Error` and ignored (`SML/Public/Registry/GameMapRegistry.h:35`, `Private/Registry/GameMapRegistry.cpp:5-23`). The instance module registers the maps on the server and on the client (`GameInstanceModule.cpp:84`). (2026-10-24, game 513885, SML 3.12.0)
+- **[?]** Level pitfalls, from the docs only: copy the example mod's level with Migrate, not by a file copy; the World Settings class must be `FGWorldSettings`; `mMinimapCaptureActor` must be assigned or opening the map crashes (the member exists, `FGWorldSettings.h:195`); creatures need a `NavMeshBoundsVolume`; Play In Editor on a custom level can crash the editor; World Partition is not supported. (2026-10-24, game 513885, docs.ficsit.app)
+
+## ADA messages
+- **[source]** An ADA message is a data asset of class `UFGMessage` (`Narrative/FGMessage.h:39`) with `mSubtitles`, `mAudioEvent`, `mCanBeQueued`, `mCanInterrupt`, `mBlockedByCooldown` and `mPriority` (`:106-166`). It is found only through a scan rule for the `FGMessage` primary asset type on the folder `/<Mod>/Narrative`; an asset in another folder never plays (the scan rule is per folder, `references/mod-structure.md`). **[?]** A voice line needs a Wwise `UAkAudioEvent` (docs). Alpakit's wizard writes the rule; a hand-made game feature needs it added (`references/mod-structure.md`). (2026-10-24, game 513885, docs.ficsit.app)
+
+## Audio (Wwise)
+- **[?]** Rules from the docs for a mod that plays sound; the class names were checked in the headers, the behaviour was not run:
+  - a looping `UAkComponent` sound must be stopped in `EndPlay`;
+  - attenuation only lowers the volume, so to stop far-away audio use `IFGSignificanceInterface::GainedSignificance`/`LostSignificance` (`FGSignificanceInterface.h:51,55`);
+  - set a playback limit per object ("Kill voice, discard oldest") in Wwise;
+  - playing an AK event from C++ is discouraged; expose a `BlueprintImplementableEvent` and play it in Blueprint;
+  - the user volume is read through `UFGGameUserSettings`/`IFGOptionInterface::GetFloatOptionValue(cvar)` (`FGOptionInterface.h:96`), the cvars are `RTPC.Menu_Volume_*`;
+  - a volume slider of a mod is an `FGUserSetting` data asset (scan folder `/<Mod>/Settings`, `UFGUserSettingApplyType_UpdateInstantly` exists, `Settings/FGUserSettingApplyType.h:170`) linked to a Wwise RTPC.
+
+  (2026-10-24, game 513885, docs.ficsit.app)
+
+## Other docs traps in this area
+- **[source]** docs.ficsit.app (Ore Scanner page) calls `AFGResourceScanner::GenerateNodeClustersAccessor`; no such symbol exists. `GenerateNodeClusters()` is a protected non-UFUNCTION (`Equipment/FGResourceScanner.h:114`) and the `Accessor` access transformer handles only `UPROPERTY` fields, so reaching it takes a `Friend=(Class=..., FriendClass=...)` entry. (2026-10-24, game 513885, docs.ficsit.app)
+- **[source]** docs.ficsit.app (Shopping List page) names `FGShoppingListObject_Object` and a getter without arguments. In game 513885: `UFGShoppingListComponent::GetShoppingListComponent(const APlayerController*)`, base class `UFGShoppingListObject`, `UFGShoppingListObject_Class`, `GetShoppingListObjectFromClass(Class, bool& out)` (`ShoppingList/*.h`). (2026-10-24, game 513885, docs.ficsit.app)

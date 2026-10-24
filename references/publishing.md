@@ -17,7 +17,18 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
   curl -s https://api.ficsit.app/v2/query -H "Content-Type: application/json" \
     -d '{"query":"{ getModByReference(modReference: \"<Ref>\") { name downloads compatibility { EA { state note } EXP { state note } } latestVersions { release { version } } authors { role user { username } } } }"}'
   ```
-- **[?]** Whether the package on ficsit.app must contain DLLs for Steam and EGS and for the servers. Check docs.ficsit.app. Alpakit in release mode builds all targets.
+- **The release package.** Alpakit Release builds all targets and writes one merged zip with `Windows\` (the Steam and the EGS DLLs together), `WindowsServer\` and `LinuxServer\` (`references/build-install-debug.md`, "Release packaging"). Seen in a packaged zip on disk, and in the ficsit.app API, where the SML 3.12.0 release lists the targets `Windows`, `WindowsServer` and `LinuxServer`. ficsit.app keeps one archive per target; SMM's cache names them `<ModRef>_<ver>_<Target>.zip`. Steam and EGS are not separate targets. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+  - **[?]** Whether ficsit.app rejects a zip that lacks a target, or only shows such a mod as incompatible with servers (the version page has a "Server" column).
+- **[?] Uploading a version** (docs.ficsit.app, UploadToSMR and the 3.12 guide; API field names checked, the rest not tried):
+  - The mod reference cannot change once the mod page exists. A Hidden mod sends no Discord notice, so unhide it before the first version.
+  - A C++ mod waits for automated approval (about 1 to 3 minutes); a Blueprint-only mod is instant.
+  - After the upload set Compatibility to `Works` for both branches. The API fields are `compatibility { EA EXP }`; SML shows `Works` for both. There is also a controller-compatibility field, default `Untested`.
+  - The first changelog lines go to the Discord channel #mod-updates. Read the ficsit.app Content Policy. The help page has a `.uplugin` validator.
+  - An update is: bump `SemVersion` and `VersionName` (and `Version`), the SML dependency and `GameVersion`; never lower the version.
+  - Uploading new versions is blocked until the questions about network activity (transparency) and generative-AI use are answered.
+  - **Tags** are set by moderators on the Edit Mod page; SMM filters by tag (all or any), although one docs page says it cannot.
+  - **Prerelease:** SMM never installs a version such as `1.2.0-beta` by itself; a tester picks it under "Change version" (the left half locks the exact version, the right half means that version or newer). That makes a beta channel possible.
+  - **Release notes for a mod that places, moves or configures base-game buildings:** state that changes can remain in a save after the mod is uninstalled. The docs know of two broken saves in modding history, repaired with a save editor from ficsit.app/tools. Test on copies of saves (`SKILL.md`, rule 11). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 ## Licenses and forks
 - Before forking or releasing someone else's mod, check the license: `gh api repos/O/R/license --jq .license.spdx_id`.
