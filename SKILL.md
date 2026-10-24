@@ -45,7 +45,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
 | Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-launch.md` |
 | Automated test runs: watchers (`scripts/watch-run.sh`), series, sub-agents | `references/test-automation.md` |
-| Working conventions for a series of tests: announcing, backlog, review, models per job | `references/test-discipline.md` |
+| Working conventions for a series of tests: announcing, results file for long series, backlog, review, models per job | `references/test-discipline.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
 | A mod worked on over many sessions: state document budget, pass criteria, evidence tables, closing checklist, compact at 500k tokens of context (`scripts/check-project-state.ps1`) | `references/project-hygiene.md` |
