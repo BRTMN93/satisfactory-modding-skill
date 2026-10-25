@@ -16,6 +16,7 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | Routes of your own in use: parking, cutting, switching under a moving train, cost routes | `domains/railroad/own-routes-in-use.md` |
 | Push-pull trains, two-way single-track lines | `domains/railroad/push-pull-lines.md` |
 | The game's railway windows (station, signal, locomotive), adding a tab to the station window | `domains/railroad/ui-windows.md` |
+| Inserting a railway layout from code without the build gun (tracks, switches, stations, signals, vehicles) | `domains/railroad/layouts-from-code.md` |
 | Test layouts: popular track layouts to check, the standard for build lists and schematics (template: `domains/railroad/schematic-template.svg`) | `domains/railroad/test-layouts.md` |
 | Pitfalls | below |
 
