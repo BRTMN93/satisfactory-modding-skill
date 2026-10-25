@@ -45,6 +45,18 @@ They sit at the top of `SKILL.md`:
 3. **Every prompt for a new chat carries its model and effort.**
 4. **A working chat never edits, commits or resets the skill's folder;** it only writes to `learned/`.
 
+## Test layouts: the mod builds them, not you
+
+A mechanism that depends on the tracks must be tested on several track layouts (passing loop, siding, junction, dead end). The skill's default: **the mod's test harness inserts the layout from code, without the build gun,** and the result is checked against a written description (tracks, switches, stations, platforms, signals, vehicles). How: [`domains/railroad/layouts-from-code.md`](domains/railroad/layouts-from-code.md).
+
+You get a build list only when:
+
+- the test is about the game's build limits (ramps, the tightest curves, stacked tracks);
+- the code cannot insert an element (refused in the log, no shape to copy);
+- you ask for one.
+
+You look once in the game, up close and from far away, at every kind of element the code has not inserted before. A data dump does not show drawing errors: tracks spawned with a turned actor looked turned 90 degrees from far away while every dump matched.
+
 ## The skill learns
 
 Game updates make modding knowledge stale. So the skill collects what each session finds out:
