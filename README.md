@@ -23,21 +23,24 @@ Done. What you now have: the rules that prevent the common mistakes, a symptom i
 |---|---|
 | Anything (rules, symptoms, procedures) | `SKILL.md`, always |
 | Environment, mod structure, SML, game classes, UI, packaging, installing, debugging, tests, publishing | `references/` (the core), one file per topic |
-| Trains, timetables, signals, routes | `domains/railroad/` |
+| Trains, timetables, signals, routes, test layouts built from code | `domains/railroad/` |
 | Drawing into textures, PNG export | `domains/rendering/` |
+| Moving your mod to a new game or SML version | `references/updating.md` |
+| The docs.ficsit.app page and the code disagree | `references/docs-errata.md` |
+| A series of automated test runs | `references/test-discipline.md`, `references/test-automation.md` |
 | A mod worked on over many sessions | `references/project-hygiene.md` |
 
 The split is deliberate: a mod with a window never loads the railway files, and a train mod opens only the railway file it needs. `evals/evals.json` checks this with dry-run tasks (the first must not open anything under `domains/`).
 
 Every statement carries a marker: no marker = verified in the packaged game, **[source]** = read from code only, **[?]** = uncertain. Check a marked statement before you build on it.
 
-Verified on: the game, SML and engine versions in `SKILL.md` ("Verified on").
+Verified on: game changelist 513885, SML 3.12.0, UE 5.6.1-CSS (the line "Verified on" in `SKILL.md` is the source). `scripts/doctor.ps1` warns when your install differs.
 
 ## Four rules every session reads first
 
 They sit at the top of `SKILL.md`:
 
-1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat.
+1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat. A long series keeps its results in a file, not in the conversation.
 2. **Closing with new inbox entries: tell the folding chat** (`fold the findings inbox`).
 3. **Every prompt for a new chat carries its model and effort.**
 4. **A working chat never edits, commits or resets the skill's folder;** it only writes to `learned/`.
