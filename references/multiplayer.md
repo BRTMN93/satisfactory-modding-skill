@@ -19,6 +19,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 **Serialization traps**
 - Do not set `ArIsNetArchive` when serializing a large array into your own buffer, because it limits array sizes.
 - `FBufferWriter` handles moving badly and ignores `FName`.
+- **[source]** Replicated `TArray` size limits in UE 5.6.1-CSS: the console variables `net.MaxRepArrayMemory` and `net.MaxRepArraySize` are declared (`Engine/Classes/Engine/NetworkSettings.h`) but not read by any `.cpp` under `Engine/Source/Runtime`; `RepLayout.cpp:4059` only refuses arrays with more than `MAX_uint16` (65535) elements. What stops a large replicated property in practice is the bunch size: a partial bunch is limited to `net.MaxConstructedPartialBunchSizeBytes`, 64 KB by default (`DataChannel.cpp:105`), so a first replication or a reliable RPC whose payload grows past about 64 KB is dropped with an error line instead of arriving. Replicated arrays and RPC payloads stay well below 64 KB (an FString is sent as UTF-16 when it has non-ASCII characters) and big answers are split. Not tested in game: the exact log line and whether the engine retries. Evidence: grep of `Engine/Source/Runtime` (only the header hit), `RepLayout.cpp:4059`, `DataChannel.cpp:104-108`. (2026-10-25, UE 5.6.1-CSS, game 513885, SML 3.12.0)
 
 **Mod versions on players' machines**
 - `RequiredOnRemote` and `RemoteVersionRange` are checked on join.
