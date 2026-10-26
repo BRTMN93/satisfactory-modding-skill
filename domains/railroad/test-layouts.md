@@ -8,7 +8,7 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
   - elements the code cannot insert (refused in the log, no shape to copy);
   - a request from the user.
   The user looks once in the game, up close and from far away, at every kind of element the code has not inserted before, because a data dump does not show drawing errors (tracks spawned with a turned actor looked turned 90 degrees from far away while every dump matched).
-- **Build lists for test layouts** (and descriptions of layouts built from code). Give lengths and gaps in Foundations (one Foundation is 8 m) with positions along the line, not in metres, and add a schematic for every rebuild, drawn and written to the standard below. A small change such as one more signal needs no schematic. Use the game's English names for buildings and ports. Check the signals against the placement rules in `domains/railroad/signals.md` instead of composing them from memory. After the build, first dump the signals from the save (type, direction, block error) and compare the dump with the list, and only then run the scenarios.
+- **Build lists for test layouts** (and descriptions of layouts built from code). Give lengths and gaps in Foundations (one Foundation is 8 m) with positions along the line, not in metres, and add a schematic for every rebuild, drawn and written to the standard below. A small change such as one more signal needs no schematic. Use the game's English names for buildings and ports. Check the signals against the placement rules in `domains/railroad/signal-placement.md` instead of composing them from memory. After the build, first dump the signals from the save (type, direction, block error) and compare the dump with the list, and only then run the scenarios.
 
 ## Layout facts for build lists
 
@@ -47,7 +47,7 @@ What it checks: <one sentence: which backlog item or test>.
 
 ## 1. Tracks and switches     (J1, J2… as on the schematic)
 ## 2. Stations and platforms  (name, mode Load/Unload, direction)
-## 3. Signals                 (A, B, C… as on the schematic; type, track, direction; checked against domains/railroad/signals.md)
+## 3. Signals                 (A, B, C… as on the schematic; type, track, direction; checked against domains/railroad/signal-placement.md)
 ## 4. Trains                  (consist, place, autopilot)
 ## 5. After the build         (save as…, copy of the save, what the session does: signal dump, then the scenario)
 ```

@@ -9,8 +9,10 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | Where to get data (subsystem, stations, trains, platforms, cargo), events available without hooks | `domains/railroad/data-events.md` |
 | Timetables, docking rules in practice | `domains/railroad/timetable-docking.md` |
 | Driving a train through its timetable (stops, errors, held trains) | `domains/railroad/driving-timetable.md` |
-| The game's route search, route graph and costs, what the autopilot does with a route | `domains/railroad/route-search.md` |
-| Signals and track connections, how signals are placed | `domains/railroad/signals.md` |
+| The game's route search, route graph and costs | `domains/railroad/route-search.md` |
+| What the autopilot does with a route | `domains/railroad/route-autopilot.md` |
+| Signals and track connections | `domains/railroad/signals.md` |
+| How signals are placed and what the game checks (blocks, valid placement, exits) | `domains/railroad/signal-placement.md` |
 | Hook targets in the railway signalling, holding a train at a signal with hooks | `domains/railroad/signal-hooks.md` |
 | Giving the autopilot a route of your own, hooking the route search | `domains/railroad/own-routes.md` |
 | Routes of your own in use: parking, cutting, switching under a moving train, cost routes | `domains/railroad/own-routes-in-use.md` |
