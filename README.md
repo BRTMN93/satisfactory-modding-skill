@@ -27,7 +27,7 @@ Done. What you now have: the rules that prevent the common mistakes, a symptom i
 | Drawing into textures, PNG export | `domains/rendering/` |
 | Moving your mod to a new game or SML version | `references/updating.md` |
 | The docs.ficsit.app page and the code disagree | `references/docs-errata.md` |
-| A series of automated test runs | `references/test-discipline.md`, `references/test-automation.md` |
+| A series of automated test runs | `references/test-discipline.md`, `references/test-automation.md`, `references/test-queues.md` |
 | A mod worked on over many sessions | `references/project-hygiene.md` |
 
 The split is deliberate: a mod with a window never loads the railway files, and a train mod opens only the railway file it needs. `evals/evals.json` checks this with dry-run tasks (the first must not open anything under `domains/`).

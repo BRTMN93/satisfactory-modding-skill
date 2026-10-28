@@ -45,7 +45,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | UI injection into game windows, widget hooks from C++, popups, searchable lists | `references/ui.md` |
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
 | Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-launch.md` |
-| Automated test runs: watchers (`scripts/watch-run.sh`), series, sub-agents | `references/test-automation.md` |
+| Automated test runs: watchers (`scripts/watch-run.sh`), series, queues, sub-agents | `references/test-automation.md`, `references/test-queues.md` |
 | Working conventions for a series of tests: announcing, results file for long series, backlog, review, models per job | `references/test-discipline.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
