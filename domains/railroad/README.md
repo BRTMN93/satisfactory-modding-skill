@@ -8,6 +8,7 @@ Most of this domain was first read from game headers (changelist 491125, later c
 |---|---|
 | Where to get data (subsystem, stations, trains, platforms, cargo), events available without hooks | `domains/railroad/data-events.md` |
 | Timetables, docking rules in practice | `domains/railroad/timetable-docking.md` |
+| Cargo platform phase timers and cranes, power cut, "fully load" that never fills, docking after a save load and on a client | `domains/railroad/docking-phase-crane.md` |
 | Driving a train through its timetable (stops, errors, held trains) | `domains/railroad/driving-timetable.md` |
 | The game's route search, route graph and costs | `domains/railroad/route-search.md` |
 | What the autopilot does with a route | `domains/railroad/route-autopilot.md` |
