@@ -47,7 +47,7 @@ They sit at the top of `SKILL.md`:
 
 ## Test layouts: the mod builds them, not you
 
-A mechanism that depends on the tracks must be tested on several track layouts (passing loop, siding, junction, dead end). The skill's default: **the mod's test harness inserts the layout from code, without the build gun,** and the result is checked against a written description (tracks, switches, stations, platforms, signals, vehicles). How: [`domains/railroad/layouts-from-code.md`](domains/railroad/layouts-from-code.md).
+A mechanism that depends on the tracks must be tested on several track layouts (passing loop, siding, junction, dead end). The skill's default: **the mod's test harness inserts the layout from code, never through the build gun,** and the result is checked against a written description (tracks, switches, stations, platforms, signals, vehicles). How: [`domains/railroad/layouts-from-code.md`](domains/railroad/layouts-from-code.md).
 
 You get a build list only when:
 

@@ -1,6 +1,6 @@
 # Railways: inserting a layout from code
 
-Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railroad/README.md`). Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. For tests that need a railway layout without building it by hand; the build list standard is in `domains/railroad/test-layouts.md`.
+Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railroad/README.md`). Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. For tests that need a railway layout without building it by hand; the build list standard is in `domains/railroad/test-layouts.md`. The owner's decision of 2026-10-28: test layouts are built from code only; building them through the build gun's hologram is dropped, so the hologram entries here and in `references/game-systems.md` stay as game facts, not as a way to build a layout.
 
 ## Spawning tracks, stations, signals and trains without the build gun
 
