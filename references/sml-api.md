@@ -100,6 +100,7 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - One hook per function address, shared by all mods. A failed hook installation is Fatal.
 - The method must be accessible. For private ones, use `Friend` from AccessTransformers.
 - `inline` and `FORCEINLINE` functions cannot be hooked, e.g. `AFGBuildableSubsystem::GetAllBuildablesRef`.
+- **[source]** The shipping DLL folds identical functions into one body (identical COMDAT folding): two functions with the same code share one address, and a hook on that address fires for both. The `.pdb` then names only one of them at that RVA. Seen for `AFGTrainScheduler::GetReservationNumber`, whose body is shared with another function. Evidence: `dumpbin /disasm` of the shipping DLL with its `.pdb` (`references/tools.md`). (2026-11-01, game 513885, SML 3.12.0)
 - Engine classes that are not exported cannot be inherited. You have to copy the whole class, e.g. `FCanvasBatchedElementRenderItem`.
 - Install hooks in `if (!WITH_EDITOR)`.
 

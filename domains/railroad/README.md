@@ -15,6 +15,7 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | Signals and track connections | `domains/railroad/signals.md` |
 | How signals are placed and what the game checks (blocks, valid placement, exits) | `domains/railroad/signal-placement.md` |
 | Hook targets in the railway signalling, holding a train at a signal with hooks | `domains/railroad/signal-hooks.md` |
+| The native scheduler at path signals: reservation queue, priority, reordering it | `domains/railroad/scheduler.md` |
 | Giving the autopilot a route of your own, hooking the route search | `domains/railroad/own-routes.md` |
 | Routes of your own in use: parking, cutting, switching under a moving train, cost routes | `domains/railroad/own-routes-in-use.md` |
 | Push-pull trains, two-way single-track lines | `domains/railroad/push-pull-lines.md` |

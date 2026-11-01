@@ -48,6 +48,8 @@ Without numpy and Pillow, you can compare images and write PNG in pure Python (`
 
 **Hiding a plugin from the engine [source].** A plugin file named `<Mod>.uplugin.disabled` is not seen by UE or UBT, which look for the extension `.uplugin` (UBT `CppIncludeLookup.cs:260`). Docs say one broken mod folder can block packaging of every mod in the project, so rename the file and regenerate the project files instead of deleting the mod. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
+**Reading the game's shipping DLL with `dumpbin`.** `dumpbin /exports <Game>\FactoryGame\Binaries\Win64\FactoryGameSteam-FactoryGame-Win64-Shipping.dll` lists the `FACTORYGAME_API` class members with their RVA, and `dumpbin /disasm` with the `.pdb` beside the DLL shows function names at call sites, which is enough to follow a native function the headers only declare. Run it from PowerShell (or cmd) with the MSVC tools on the path: Git Bash rewrites `/exports` and `/disasm` into paths. (2026-11-01, game 513885, MSVC 14.38)
+
 **Git/GitHub**
 - Check whether a commit applies cleanly to another branch (cherry-pick simulation without touching files):
   `git merge-tree --write-tree --merge-base=<commit>^ <branch> <commit>`
