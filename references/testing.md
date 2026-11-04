@@ -36,6 +36,7 @@ Watching automated runs, series and sub-agents: `references/test-automation.md`.
   - **[?]** Leaving such a session through the menu loaded the same save again (`LoadMap: ...?closed?skipOnboarding?listen?loadgame=<save>` right after the player saved and left). The likely cause is that the `-ini` override of `LocalMapOptions` also applies to the map the menu goes back to. Seen once.
 - **A developer test mode behind a custom launch parameter works in Shipping.**
   - `FParse::Value(FCommandLine::Get(), TEXT("MyModTest="), Name)` reads `-MyModTest=<Name>`.
+  - **`FParse::Param` did not see a switch written as `-Flag=1`.** A test arm read with `FParse::Param(FCommandLine::Get(), TEXT("MyModArm"))` stayed off when the command line had `-MyModArm=1`, and came on with the bare `-MyModArm`. A test switch read with `FParse::Param` goes on the command line without a value; a switch that takes a value is read with `FParse::Value`. Evidence: <scenario> with `-MyModArm=1` ran its default arm (no line of the arm), with `-MyModArm` the arm's lines came. (2026-11-04, game 513885, SML 3.12.0, UE 5.6.1-CSS)
   - Start the scenario on the next tick after the world module's `POST_INITIALIZATION`.
   - Write steps and the result to the log under a fixed tag.
   - Close the game afterwards with `GLog->Flush()` and then `FPlatformMisc::RequestExit(false, TEXT("<call site>"))`. This logs `FPlatformMisc::RequestExit(0, <call site>)` and `Engine exit requested`, then shuts down cleanly (`LogExit: Exiting.`) in about 7 s.
