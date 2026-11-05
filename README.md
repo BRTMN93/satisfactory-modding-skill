@@ -40,10 +40,12 @@ Verified on: game changelist 513885, SML 3.12.0, UE 5.6.1-CSS (the line "Verifie
 
 They sit at the top of `SKILL.md`:
 
-1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat. A long series keeps its results in a file, not in the conversation.
+1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat. A chat with many or long test runs keeps its results in a file, not in the conversation, with a `Key results` block that is never trimmed, so the earliest results cannot be lost.
 2. **Closing with new inbox entries: tell the folding chat** (`fold the findings inbox`).
 3. **Every prompt for a new chat carries its model and effort.**
 4. **A working chat never edits, commits or resets the skill's folder;** it only writes to `learned/`.
+
+A long project also has context limits (`references/project-hygiene.md`, section 8): at 500k tokens of context a chat starts no new task or series, and at 600k it stops, writes its checkpoint and compacts or hands the rest over. A handover is a fresh session that starts from the checkpoint and results files, never a fork, because a fork carries the whole conversation and starts at the same size.
 
 ## Test layouts: the mod builds them, not you
 
