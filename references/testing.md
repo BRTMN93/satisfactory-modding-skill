@@ -17,7 +17,7 @@ Watching automated runs, series and sub-agents: `references/test-automation.md`.
 - Automation: a separate test mod enabled by a launch parameter (e.g. `-MyModTestBridge`) reads commands from a file (`commands.jsonl`), loads saves, builds and dismantles buildings, samples frame times and memory, and writes the results to files.
 - Check rendering changes by comparing images pixel by pixel (old and new build, same save).
 
-- **A test save built under another mod profile loses buildables when it is re-saved without those mods.** Track pieces and a conveyor lift were missing after a save was loaded and saved again in a profile with only SML. The save's session settings still carried the other profile's mod settings (`SessionSettings=...InfiniteZoop.BlueprintZoop=...` in `LogGameMode: ProcessServerTravel`). Build and change test saves only in the test profile, and after every change check them in the game, for example with one full lap of a test train. (2026-10-02, game 502094, SML 3.12.0)
+- **A test save built under another mod profile loses buildables when it is re-saved without those mods.** Track pieces and a conveyor lift were missing after a save was loaded and saved again in a profile with only SML. The save's session settings still carried the other profile's mod settings (`SessionSettings=...<OtherMod>.<Setting>=...` in `LogGameMode: ProcessServerTravel`). Build and change test saves only in the test profile, and after every change check them in the game, for example with one full lap of a test train. (2026-10-02, game 502094, SML 3.12.0)
 
 **Launching the game for tests**
 - **Starting the game straight into a save works** (docs.ficsit.app, Development → Testing). Launch `<Game>\FactoryGameSteam.exe` with:
