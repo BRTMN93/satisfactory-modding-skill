@@ -33,6 +33,7 @@ A rule that exists only in the plan is not enough. Three elements belong into a 
 - **A line in the starting prompt of every session:** "Is the state document over its budget? Does every open item have `Passes when:`?"
 - **The check script** above, run at the start and at the close of a session.
 - **A step in the closing checklist and in the gate:** archive when over budget, criteria frozen and compared, evidence table refreshed, every run of the session has its row in the run register with a log path that exists, entries for `learned/` written and the folding chat told (`SKILL.md`, rule 2).
+- **When one coordinating chat (a conductor) starts and steers the working chats, a working chat's closing report carries results only:** items passed or rejected with their evidence, commits, branches and merges, new backlog rows, what was not checked, what the user must do or decide, and notes for later chats (for example an evidence-table row to refresh). It does not pick the next chat and does not write its prompt; the conductor picks the next chat from the chat list, writes the prompt and starts it, so the user never copies a prompt and the choice of what comes next stays in one place. Seen: working chats ended their reports with "next chat + model + effort + prompt", which made each of them a second planner; the user corrected it to "the closing chats only report results, the conductor decides what comes next". Evidence: the user's correction in the coordinating chat and the changed closing checklist. (2026-11-08)
 
 ## 7. Pitfalls met in this work
 
