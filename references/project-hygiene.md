@@ -16,7 +16,7 @@ Each open item has a line `Passes when:` with three parts: scenario and save, a 
 ## 3. Coverage of layouts needs evidence that stays current
 
 - The list of popular layouts (tracks, flows, topologies) has at least two sources outside the project, and a table `layout → evidence (log file) → code it ran on → open items`.
-- After every code change that touches a mechanism, the evidence for that mechanism is "needs a repeat" until it is re-run. The table is an input of the release gate (`references/testing.md`).
+- After every change under the packaged paths, every earlier row of the run register is stale until re-run; the table's "code it ran on" column is the register's build commit (`references/test-discipline.md`, "One run per piece of evidence"). The table is an input of the release gate (`references/testing.md`).
 - "A popular layout is never out of scope" stays; being popular among players is the entry criterion and the user decides the list.
 
 ## 4. One map of saves, worlds and scenarios
@@ -32,7 +32,7 @@ Before a change to the working method is adopted, a separate agent on a strong m
 A rule that exists only in the plan is not enough. Three elements belong into a project from its start, not after dozens of sessions:
 - **A line in the starting prompt of every session:** "Is the state document over its budget? Does every open item have `Passes when:`?"
 - **The check script** above, run at the start and at the close of a session.
-- **A step in the closing checklist and in the gate:** archive when over budget, criteria frozen and compared, evidence table refreshed, entries for `learned/` written and the folding chat told (`SKILL.md`, rule 2).
+- **A step in the closing checklist and in the gate:** archive when over budget, criteria frozen and compared, evidence table refreshed, every run of the session has its row in the run register with a log path that exists, entries for `learned/` written and the folding chat told (`SKILL.md`, rule 2).
 
 ## 7. Pitfalls met in this work
 

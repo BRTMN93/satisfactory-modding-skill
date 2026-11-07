@@ -76,6 +76,7 @@ Watching automated runs, series and sub-agents: `references/test-automation.md`.
 **Pre-release checklist**
 - [ ] Package all the targets you release (Steam, EGS, Win/Linux servers).
 - [ ] Small and large save; new game.
+- [ ] Planned item runs with the same key as a gate run are merged into the gate only when it runs in the same session on the same build, before its test step; the gate's own runs reuse no earlier row (`references/test-discipline.md`, "One run per piece of evidence").
 - [ ] 3 save loads in a row and a return to the menu: VRAM and RAM stable, no mod errors after loading, i.e. nothing leaks from the previous world.
 - [ ] Multiplayer: host + client; dedicated server.
 - [ ] Log without mod errors and warnings.
