@@ -40,12 +40,14 @@ Verified on: game changelist 513885, SML 3.12.0, UE 5.6.1-CSS (the line "Verifie
 
 They sit at the top of `SKILL.md`:
 
-1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat. A chat with many or long test runs keeps its results in a file, not in the conversation, with a `Key results` block that is never trimmed, so the earliest results cannot be lost.
+1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat. A chat with many or long test runs keeps its results in a file, not in the conversation, with a `Key results` block that is never trimmed, so the earliest results cannot be lost. While a run goes the chat is idle: it ends its turn once the run and its watchers are started, and goes on from a watcher's report, because an active chat re-reads its whole context on every call. Watchers follow the run's length: none up to 1 minute, a behaviour watcher over 1 minute, a result and behaviour pair over 3 minutes.
 2. **Closing with new inbox entries: tell the folding chat** (`fold the findings inbox`).
 3. **Every prompt for a new chat carries its model and effort.**
 4. **A working chat never edits, commits or resets the skill's folder;** it only writes to `learned/`.
 
 A long project also has context limits (`references/project-hygiene.md`, section 8): at 500k tokens of context a chat starts no new task or series, and at 600k it stops, writes its checkpoint and compacts or hands the rest over. A handover is a fresh session that starts from the checkpoint and results files, never a fork, because a fork carries the whole conversation and starts at the same size.
+
+A series of in-game runs also keeps a **run register** (`references/test-discipline.md`): each run is identified by scenario, save, arguments, build, versions and conditions, and before a series the planned runs are compared with the register, so a run that already exists is not repeated and runs that give the same evidence are merged. A repeat on new code is never blocked, and the mechanism is marked unverified until a series has run with it.
 
 ## Test layouts: the mod builds them, not you
 
@@ -61,7 +63,7 @@ You look once in the game, up close and from far away, at every kind of element 
 
 ## The skill learns
 
-Game updates make modding knowledge stale. So the skill collects what each session finds out:
+Game updates make modding knowledge stale. So the skill collects what each session finds out about the game and about modding it, never how a particular third-party mod behaves or how mods affect each other:
 
 1. **While you work:** Claude writes new facts, corrections and confirmations into an inbox (`learned/findings.md`, or `learned/<domain>.md`), with evidence and versions. One line to you each time.
 2. **When a task is done:** if enough has piled up, Claude asks once whether to fold the entries into the reference files and whether to send them here as a pull request.
