@@ -14,6 +14,7 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
   - With that rule and an unloading platform that was nearly full, the train left with 100–200 ore still in the wagon, in three runs. The docking took 27–30 s: the platform was in `ETPDS_WaitForTransferCondition` for 2.5 s, then in `ETPDS_Unloading`.
   - The 15 s "or" timer is what lets it leave. Measured below.
 - A timetable written from code is shown correctly in the train window, and the player can edit it there.
+- **Changing a stop's station in the game's train timetable window keeps the current stop index.** A player picked another station for stop 2 of `<train>` while it was docked and loading at stop 1 (`TDS_Docked`): the stops changed from `[<station A>,<station B>]` to `[<station A>,<station C>]` and `GetCurrentStop()` stayed 1 before and after the edit; the train then left for `<station C>`. So a mod that watches the current stop to tell its own writes from other changes sees nothing move on such an edit. Evidence: a mod's per-second log of the train, `stop 1/2 [...] dock 2` before and after, in a manual test. (2026-11-07, game 517554, SML 3.12.0)
 
 ## Docking rules in practice
 
