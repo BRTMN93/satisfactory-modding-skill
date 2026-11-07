@@ -1,6 +1,6 @@
 # Watcher prompts
 
-Every run that lasts more than a few minutes gets TWO watchers, started together right after the run starts and stopped together (`TaskStop`) when it ends: the result watcher (`scripts/watch-run.sh`, first prompt) and the behaviour watcher (`scripts/behaviour-read.sh`, second prompt), both on Haiku 5.5 at high effort (the owner's decision of 2026-10-29: watching needs no mid-size model; on 2026-10-07 Haiku 4.5, an older model, did not follow the result watcher's prompt reliably, and since then the script filters the lines itself). The result watcher alone misses a mod that misbehaves with every check green (`references/test-automation.md`).
+Watchers by the run's expected length: up to 1 minute none, over 1 minute the behaviour watcher alone (it also reports `RESULT` and `GAME CLOSED`), over 3 minutes TWO watchers, started together right after the run starts and stopped together (`TaskStop`) when it ends: the result watcher (`scripts/watch-run.sh`, first prompt) and the behaviour watcher (`scripts/behaviour-read.sh`, second prompt), both on Haiku 5.5 at high effort (the owner's decision of 2026-10-29: watching needs no mid-size model; on 2026-10-07 Haiku 4.5, an older model, did not follow the result watcher's prompt reliably, and since then the script filters the lines itself). The result watcher alone misses a mod that misbehaves with every check green (`references/test-automation.md`).
 
 ## Result watcher
 
