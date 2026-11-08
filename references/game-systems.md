@@ -68,6 +68,11 @@ Everything here was read in the game headers and the SML source or on docs.ficsi
 
   (2026-10-24, game 513885, docs.ficsit.app)
 
+## Runtime static meshes and time of day
+
+- A static mesh built at runtime in the shipping game works: `UStaticMesh::BuildFromMeshDescriptions` with `bFastBuild = true` and `bCommitMeshDescription = false`, a `NewObject<UStaticMesh>` in the transient package, slots added to `GetStaticMaterials()` before the build, `FStaticMeshAttributes` on an `FMeshDescription`, modules `MeshDescription` and `StaticMeshDescription` in `Build.cs`. A non-fast build hits a `check` in shipping (`StaticMesh.cpp`, `#if !WITH_EDITOR`). A front face follows `(C - A) ^ (B - A)`. No asset is needed in the mod. Evidence: seen by day and at night in the packaged game. (2026-11-08, game 517554, UE 5.6.1-CSS)
+- `AFGTimeOfDaySubsystem::SetDaySeconds(0.f)` called every frame holds midnight in the packaged game while a player looks around. (2026-11-08, game 517554)
+
 ## Other docs traps in this area
 - **[source]** docs.ficsit.app (Ore Scanner page) calls `AFGResourceScanner::GenerateNodeClustersAccessor`; no such symbol exists. `GenerateNodeClusters()` is a protected non-UFUNCTION (`Equipment/FGResourceScanner.h:114`) and the `Accessor` access transformer handles only `UPROPERTY` fields, so reaching it takes a `Friend=(Class=..., FriendClass=...)` entry. (2026-10-24, game 513885, docs.ficsit.app)
 - **[source]** docs.ficsit.app (Shopping List page) names `FGShoppingListObject_Object` and a getter without arguments. In game 513885: `UFGShoppingListComponent::GetShoppingListComponent(const APlayerController*)`, base class `UFGShoppingListObject`, `UFGShoppingListObject_Class`, `GetShoppingListObjectFromClass(Class, bool& out)` (`ShoppingList/*.h`). (2026-10-24, game 513885, docs.ficsit.app)
