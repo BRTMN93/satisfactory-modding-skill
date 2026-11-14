@@ -75,6 +75,7 @@ You can include UE5Coro in the mod as source. It requires C++20.
 - `Latent::NextTick()`, `Latent::AsyncLoadObject(SoftPtr)`.
 - Critical section that must not be cancelled: `UE5Coro::FCancellationGuard`. Cleanup: `ON_SCOPE_EXIT`. Control: `Cancel()`, `IsDone()`.
 - Note from pitfall 11 above: a coroutine starts synchronously.
+- Work split across frames with a "the frame's first step always goes" rule (so a frame with no time left still makes progress) hangs when a bookkeeping checkpoint takes that first step. A <Mod> planner look added a budget check between two pairs of a list; the check ran before any real work of the frame, counted as the first step, so every real step after it (a list build, a route query) was refused as over budget. A caller that loops `while (!Step())` until the work is done then never finishes: the packaged game's self-test hung in a load until the run hit its timeout. What fixes it: a checkpoint refuses once the frame already did a real step (`if (StepsThisFrame > 0 && !MayGoOn())`). A self-test that drives the sliced work to the end with a zero budget per frame finishes in a bounded number of calls when the rule holds. Evidence: <scenario> self-test timeout on the build with the checkpoint, PASS with 0 failed checks after the fix. (2026-11-14, game 517554, SML 3.12.0)
 
 ```cpp
 UE5Coro::TCoroutine<> UMyModule::ProcessAll(TArray<FItem> Items, FForceLatentCoroutine)
@@ -116,3 +117,5 @@ UE5Coro::TCoroutine<> UMyModule::ProcessAll(TArray<FItem> Items, FForceLatentCor
 - **[source]** The name `FTrackGraph` is taken by a game struct (`FGRailroadSubsystem.h`). Custom track graph types must use a different name or a prefix.
 - Cast `sizeof` explicitly, e.g. `W * static_cast<uint32>(sizeof(FColor))`.
 - **Include the headers you use**, e.g. `RenderingThread.h`, `RHICommandList.h`, `RHIUtilities.h`, `TextureResource.h`, `Tasks/Task.h`, `Misc/FileHelper.h`, `HAL/FileManager.h`, `HAL/IConsoleManager.h`, `ImageUtils.h`, `Modules/ModuleManager.h`, `Hash/CityHash.h`, `Compression/OodleDataCompressionUtil.h`, `GlobalRenderResources.h`.
+
+<!-- size-exception: pitfalls from real bugs, one list; a split is for the user to decide -->
