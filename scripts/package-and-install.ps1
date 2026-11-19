@@ -33,7 +33,7 @@ Write-Host "Built: $zip"
 if (-not $GameDir) { return }
 
 # The running game locks the mod's DLL. A game that hung on exit stays listed with HasExited = true and still locks
-# the files (references/testing.md, "A game that hangs on exit"), so it gets its own message.
+# the files (references/testing-environment.md, "A game that hangs on exit"), so it gets its own message.
 function Get-Game { Get-Process -Name 'FactoryGame*' -ErrorAction SilentlyContinue }
 if ($WaitForGameExit) { while (Get-Game | Where-Object { -not $_.HasExited }) { Start-Sleep -Seconds 5 } }
 if (Get-Game | Where-Object { -not $_.HasExited }) { throw 'Close the game first (or pass -WaitForGameExit)' }

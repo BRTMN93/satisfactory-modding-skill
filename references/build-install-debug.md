@@ -1,6 +1,6 @@
-# Build, packaging, installation, logs and diagnostics
+# Build, packaging and installation
 
-Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
+Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own. Running the game, logs, crashes and measurements: `references/debug-logs-crashes.md`.
 
 ## Build and packaging
 
@@ -85,7 +85,7 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - `... does not appear to be compatible with the current version of the engine` (`:2712`).
 - `This project requires the '<Mod>' plugin, which has a missing dependency on the 'SML' plugin` (`:2606`): SML is not installed. (2026-10-24, game 513885, SML 3.12.0)
 
-**[?] After switching a game branch or a major update** the game may refuse to start with mods; disable them first (SMM "Mods off", or the `-DisablePlugins` switch described in `references/testing.md`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+**[?] After switching a game branch or a major update** the game may refuse to start with mods; disable them first (SMM "Mods off", or the `-DisablePlugins` switch described in `references/testing-environment.md`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **Satisfactory Mod Manager (SMM, ficsit-cli)**
 - Mods installed by SMM have a `.smm` marker file. SMM does not touch a manual install without the marker: the mod survived a switch to a profile that did not include it.
@@ -103,70 +103,3 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - Restore with the game closed. Do not add this mod in SMM.
 - A game update can disable the mod through `GameVersion`.
 
-## Running, logs, crashes, measurements
-
-**Game log:** `%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log`.
-- Shipping writes Display, Warning and Error lines.
-- At every start the old log is renamed to `FactoryGame-backup-<UTC>.log`.
-- Timestamps are in **UTC**.
-  - The first line, `Log file open, <date> <time>`, is in **local** time, while the line stamps and the backup name are UTC, and the backup is named after the UTC time of the *new* start that renamed it. A run's log therefore cannot be matched to a start time without the time zone; match it by its first line and a line number. Evidence: `Log file open, 10/06/26 19:01:03` above line stamps of 17.01 UTC (UTC+2); a log first opened at 20:21:45 local became `FactoryGame-backup-2026.10.06-18.21.45.log`. (2026-10-06, game 502094, SML 3.12.0)
-- Line format: `[2026.09.29-17.04.43:468][465]LogX: Display: ...`. The second number is the frame number modulo 1000, so you can compute FPS from the frame difference and the time.
-- Many lines with the same frame number spread over seconds mean a hitch. A 3-second freeze was found this way.
-
-**Useful log lines**
-- `LogInit: Engine Version / Net CL / Build Configuration`
-- `LogSatisfactoryModLoader: Display: Version check passed … Game Changelist`
-- `LogSatisfactoryModLoader: Display: <Mod>: <version>`: the mod loaded.
-- `LogNativeHookManager: … Successfully hooked function X`
-- `LogLoad: Took N seconds to LoadMap(...)`
-- `LogGame: World Serialization (save|load): N seconds`
-- `LogPakFile: Mounted Pak file ...`
-
-**SML log categories for diagnosis [source]** (all defined with `DEFINE_LOG_CATEGORY*` in SML): `LogBlueprintHookManager` and `LogBlueprintHookingCodeGen` (a Blueprint hook that does not attach, and the bytecode), `LogWidgetBlueprintHookManager`, `LogContentRegistry` (errors about a frozen registry), `LogSubsystemManager`, `LogConfigManager`, `LogChatCommand`, `LogSessionSettingsRegistry`, `LogGameMapRegistry`, `LogModNetworkHandler`. `scripts/watch-log.ps1` can match these categories. (2026-10-24, game 513885, SML 3.12.0)
-
-**Did the mod add errors?** The fastest check is to compare the set of errors with the previous log.
-- A game with only SML has constant errors in the log unrelated to mods (DLSS `kFeatureDLSS_G`, `t.MaxFPS`, Niagara, MVVM in `BPW_JoinGame`, `Array_Sort` in SML's `Widget_SessionSettings`).
-- Loading a freshly created save (new game, only SML installed) also logs several `LogSave: Error: Object Reference '<id>::Persistent_Level:PersistentLevel.BP_CreatureSpawner<N>' is contained inside of the World Partition Cell ...` lines, and the same for `BP_Spline<N>`. Exclude them when comparing error sets.
-- Method: `grep -E "Fatal|: Error:"` in both logs, strip the timestamps (`sed -E 's/^\[[^]]*\]\[[^]]*\]//'`), `sort -u` and `diff`. Observed: the set was identical to the one from the `ExampleMod` log.
-
-**Logging in the mod**
-- Own category: `DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Display, All)`.
-- Keep the compile-time verbosity `All` for a category named `Log<ModRef>`. SML creates `Log<PluginName>` for the Blueprint log nodes with compile-time `All` (`BlueprintLoggingLibrary.cpp:16-21,45-50`); a C++ category of the same name with another compile-time verbosity (tested: `DECLARE_LOG_CATEGORY_EXTERN(Log<ModRef>, Log, Log)`) in a mod that also uses Blueprint log nodes kills the game at the first call of an SML log node from a Blueprint of that plugin, not at load, because SML creates its dynamic category lazily: `LogSatisfactoryModLoader: Registering dynamic Blueprint logging category Log<ModRef> with default verbosity Verbose`, then `Fatal error: [...LogSuppressionInterface.cpp] [Line: 460] Log suppression category Log<ModRef> is defined multiple times with different compile time verbosity.`, also in `CrashContext.runtime-xml` (`LogSuppressionInterface.cpp:455-459`). The `All` variant was not run (it is what the templates use). docs.ficsit.app says the same. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
-- One category for several modules: `DECLARE_LOG_CATEGORY_EXTERN` with the export macro of the lowest module (`MYMODCORE_API DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Log, All);`) in its public header, and `DEFINE_LOG_CATEGORY` in its `.cpp` file. The other modules depend on that module and use the same category.
-- Macros that append `__LINE__`.
-- Debug logs behind a `constexpr bool`, enabled by a rebuild. One run with full logging produced a 49 MB log.
-- Measure the phases of work: `FPlatformTime::Seconds()` at the start and a log like "X done in %.2f s, %d items" at the end.
-- **Measuring a few µs of work per frame: the thread's CPU time (`QueryThreadCycleTime`) read outside the clock reads, with the allowance calibrated by an empty measurement of the same pattern in the frame's own conditions.** With the pattern CPU read, `FPlatformTime::Cycles64()`, work, `Cycles64()`, CPU read, the CPU time also holds the two clock reads, so an empty pair of CPU reads in a tight loop (0.126 µs here) under-counts the allowance: a measure "void when the CPU average exceeds the clock average by more than the reads' cost" came out void although the work fitted (1.166 µs over the clock at up to 8 calls a frame against 1.008 µs allowed). An empty measurement of the full pattern taken once a frame inside the game's tick gave 0.210 µs CPU over the clock, and the same check then passed (CPU 1.831 ≤ clock 0.316 + 8 × 0.210 µs). Wall-clock maxima of such small steps are dominated by descheduling (frames at 50-580 µs by the clock with 4-7 µs of CPU), so a per-frame limit of tens of µs belongs on the thread's CPU time, with the clock kept for the average. Evidence: C1 lines of two <scenario> runs on a large save, ~35 000 frames each. (2026-11-03, game 513885, SML 3.12.0, Windows 11)
-- A temporary build that logs every event (add, remove, task start and cancel) quickly explains player reports.
-- A mod can write its own log file in the background with the engine's `FOutputDeviceFile` (the class behind `FactoryGame.log`): `MakeUnique<FOutputDeviceFile>(*Path, /*bDisableBackup*/ true, /*bAppendIfExists*/ true)`, then `SetSuppressEventTag(true)` (no "Log file open" header line), then `Serialize(*Line, ELogVerbosity::Display, NAME_None)` per line. The line goes to the device's own `FAsyncWriter` thread; the game thread only formats and queues it. Measured in a packaged game on a large save (about 50 trains, 1092 lines in 300 s): 3.17 µs per line on the game thread on average, 0.00019 ms a frame; the longest single write was 2.16 ms, **[?]** most likely the first `Serialize`, which opens the file on the game thread. `TearDown()` flushes and joins the writer thread on the calling thread, so closing or rotating such a file costs one short stall. Evidence: test step line `the decision log's writes: 1092 entries, 3457.7 us together (average 3.17 us, the longest of the run 2160.9 us), 0.00019 ms a frame on average over 17939 frames`. (2026-11-19, game 520140, SML 3.12.0)
-- **[source]** `FOutputDeviceFile::CreateWriter` is private (`Engine/Source/Runtime/Core/Public/Misc/OutputDeviceFile.h`, after `private:`), so a mod cannot open the file up front: with the default `bCreateWriterLazily = true` the file is created by the first `Serialize`. Every open writes a UTF-8 byte order mark (`WriteByteOrderMarkToArchive(EByteOrderMark::UTF8)` in `CreateWriter`, `OutputDeviceFile.cpp`), also with `bAppendIfExists`, so an appended file carries a BOM in the middle (`ï»¿`), which a line-comparing reader meets. (2026-11-19, UE 5.6.1-CSS)
-- **[source]** The engine's old-log cleanup (`FMaintenance::DeleteOldLogs`, `Core/Private/Misc/FileHelper.cpp`, settings `[LogFiles] PurgeLogsDays` and `MaxLogFilesOnDisk`) lists only files directly in `Saved/Logs` (`FindFiles(..., "<LogDir>*.*", true, false)`, no recursion) and only names with the backup postfix (`-backup-`). A mod's own log files in a subfolder such as `Saved/Logs/<Mod>/` are never deleted by the game, so the mod caps and cleans that folder itself. (2026-11-19, UE 5.6.1-CSS)
-
-**Editor and packaging logs.** The editor writes `<Project>\Saved\Logs\FactoryGame.log` (plus `UnrealPak-backup-*.log`; seen on disk), packaging `%APPDATA%\Unreal Engine\AutomationTool\Logs\` (see "Build and packaging"). docs.ficsit.app also names `%LOCALAPPDATA%\UnrealEngine\<ver>\Saved\Logs`, which did not exist here **[?]**. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
-
-**Attaching a debugger**
-- Process: `FactoryGameSteam-Win64-Shipping.exe` (EGS: `FactoryGameEGS-...`). docs.ficsit.app (Cpp debugging) says `FactoryGame-Win64-Shipping.exe`; the install has only `<Game>\Engine\Binaries\Win64\FactoryGameSteam-Win64-Shipping.exe` and its `.pdb` (26 MB), the game's pdbs are in `FactoryGame\Binaries\Win64`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
-- **[source]** `-WaitForDebugger` attaches late, in SML's init (`SatisfactoryModLoader.cpp:150-160`). The engine skips its structured-exception guard only when `-NoExceptionHandler` is given or a debugger is present when `WinMain` starts (`LaunchWindows.cpp:240-269`); after a late attach the guard stays on and SML logs a warning (`SatisfactoryModLoader.cpp:177`), so an access violation does not reach the debugger. Pass both `-WaitForDebugger` and `-NoExceptionHandler`. Side effect (tested): the engine's crash reporter is bypassed, so that run leaves no `UECC-Windows-*\CrashContext.runtime-xml` (a null write without the flag did write one, `game process exit code: 0x00000003`). The game's Sentry SDK still catches the exception with the flag: it logs the error and a symbolised call stack with mod frames into `FactoryGame.log` under `LogSentrySdk` (`LogSentrySdk: Error: Unhandled Exception: EXCEPTION_ACCESS_VIOLATION writing address 0x0000000000000000`, `LogSentrySdk: Error: [Callstack] ...`), logs `sending envelope`, hands control to crashpad and writes a minidump to `%LOCALAPPDATA%\FactoryGame\.sentry-native\reports\<id>.dmp` (the log and a screenshot under `.sentry-native\attachments\<id>\`); the process ends with `0xC0000005`, and no WER dump went to `%LOCALAPPDATA%\CrashDumps`. So `-NoExceptionHandler` does not leave the crash to WER or a debugger alone, and the Sentry minidump is the dump to open. The files were gone after the run (crashpad removes them once sent, so the report was most likely uploaded) **[?]**: whether the envelope reaches the Sentry server for a modded game was not checked.
-- **[source]** Ensures and errors break into an attached debugger (`SatisfactoryModLoader.cpp:164-173`, `OnHandleSystemEnsure/Error` calls `DebugBreak`). An `ensure()` in mod code is live in Shipping (see "Checks in the Shipping build"), so it stops the debugger.
-- **[?]** From the docs, Visual Studio: after the first attach use "Reattach to Process"; untick Debug > Options > Debugging > General > "Require source files to exactly match"; a Function Breakpoint `ClassName::FunctionName` works on vanilla functions through the shipped pdbs, "most of the time". (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
-
-**Crash:** the directory `%LOCALAPPDATA%\FactoryGame\Saved\Crashes\UECC-Windows-<id>_0000\` contains:
-- `CrashContext.runtime-xml` with the fields `<ErrorMessage>` and `<CallStack>`,
-- a copy of the log,
-- `UEMinidump.dmp`.
-
-**VRAM of a single process.** Task Manager sums all processes, so it misleads. Count it like this:
-```powershell
-$p = Get-Process FactoryGameSteam-Win64-Shipping
-$c = Get-Counter "\GPU Process Memory(pid_$($p.Id)*)\Dedicated Usage"
-($c.CounterSamples | Measure CookedValue -Sum).Sum / 1GB
-```
-- Leak test: at least 3 save loads and returns to the menu, measuring about 10 s after each load.
-- A healthy result: 4.10 → 4.12 → 4.12 GB and 3.65 GB in the menu. A leak, for comparison, grew to 16 GB.
-
-**Game process:** `FactoryGameSteam-Win64-Shipping` (EGS version: `FactoryGameEGS-...`).
-- A test run that ends with `RequestExit` can crash in SML's config flush at exit: `Fatal error … EXCEPTION_ACCESS_VIOLATION reading address 0x40`, call stack `UModLoadingLibrary::LoadMetadataForPlugin` ← `UConfigManager::SaveConfigurationInternal` ← `UConfigManager::FlushPendingSaves` ← `FEngineLoop::AppPreExit`. It came after the scenario's `RESULT` line and the save file was written, so the run's result stands; the test script reads the result from the log, not from the exit code. Seen once with an older build of the same mod in 21 runs that day, 20 of them exiting cleanly. The cause: a config value changed before SML's 0.2 s save timer has fired is still pending at exit and the exit flush runs after the mod list is gone; in a 2026-10-24 test (game 513885) the same exit died silently instead, with no crash report, and exits 0.5 s or more after the change were clean (`references/sml-config-networking.md`, "Config"). (2026-10-11, game 502094, SML 3.12.0)
-- **[?] A crash of the game itself while a test returns to the main menu: `EXCEPTION_ACCESS_VIOLATION` in `WindowsAudioNotifications::MakeDevicesDirty'::<lambda_1>` (FactoryGame module), run from `UEngine::LoadMap` → `TrimMemory` → `FlushRenderingCommands`, right after `LogAudio: Display: Audio Device unregistered from world 'None'`.** No frame of the mod is on the stack. It came once, on the second return to the menu of a three-loads test of a small save; the same test repeated at once passed all three loads. Cause not settled (an audio device change notification on a laptop is likely), so a crash with this stack is the game's, not the mod's. Evidence: `<scenario> LOAD 2: 43 lines, 0 differences`, then `Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x00000001e3030040`, `[Callstack] ... WindowsAudioNotifications::MakeDevicesDirty ...`; the repeat `RESULT PASS`. (2026-11-03, game 513885, SML 3.12.0)
-
-**Dedicated server paths on Windows:** log `<server>\FactoryGame\Saved\Logs\FactoryGame.log`; saves `%LOCALAPPDATA%\FactoryGame\Saved\SaveGames\server` (the same user profile as the game, folder `server`); server settings `ServerSettings.<port>.sav` in `SaveGames`. At start the server loads the newest save of its folder by itself, so a test that uploads its own save moves the old ones aside first, or the run starts in the wrong world. Evidence: a test started in a previous run's world until the old saves were moved. (2026-10-21, game 513885)
-<!-- size-exception: packaging, install and debugging notes grow with each fold; a split is the user's decision -->

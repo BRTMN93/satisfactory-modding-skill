@@ -13,7 +13,7 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 - **Configuration / FAQ "Mod Configuration Files"**: docs say only "Configs folder"; the file path with a category is in `references/sml-config-networking.md`. **[source]**
 - **Registry, ContentTagRegistry**: docs say the Mod Content Registry and Content Tag Registry are game instance subsystems; in the code they are world subsystems. The SML 3.12 form is in `references/sml-content-sessions.md`. **[source]**
 - **Subsystems**: docs say "BeginPlay is called as part of Initialization"; the code calls `DispatchInit()` at registration, before BeginPlay. The SML 3.12 form is in `references/sml-api.md`. **[source]**
-- **SMLChatCommands (cheats)**: docs call `SML.ForceAllowCheats` a session setting; in the code it is a CVar. Both exist: a save made with the setting on carries it in its header, and the CVar works from `-ExecCmds`, but a save loaded through `?loadgame=` does not apply the stored setting (tested 2026-10-24); see `references/sml-config-networking.md`, "Cheats in a test run".
+- **SMLChatCommands (cheats)**: docs call `SML.ForceAllowCheats` a session setting; in the code it is a CVar. Both exist: a save made with the setting on carries it in its header, and the CVar works from `-ExecCmds`, but a save loaded through `?loadgame=` does not apply the stored setting (tested 2026-10-24); see `references/sml-networking-commands.md`, "Cheats in a test run".
 
 ## 2. Satisfactory game systems
 
@@ -39,8 +39,8 @@ Part of the `satisfactory-modding` skill. docs.ficsit.app "latest" was partly wr
 
 ## 3. C++ setup, debugging, tools
 
-- **Cpp_debugging ("Attach Debugger")**: docs say attach to `FactoryGame-Win64-Shipping.exe`; the install has `FactoryGameSteam-Win64-Shipping.exe` (EGS: `FactoryGameEGS-...`). The correct name is in `references/build-install-debug.md`. **[source]** (file on disk)
-- **Cpp_debugging ("Asserts")**: docs imply `check()` is off in Shipping; in mod code `check()` and `ensure()` are live in Shipping. The detail is in `references/build-install-debug.md`. **[source]**
+- **Cpp_debugging ("Attach Debugger")**: docs say attach to `FactoryGame-Win64-Shipping.exe`; the install has `FactoryGameSteam-Win64-Shipping.exe` (EGS: `FactoryGameEGS-...`). The correct name is in `references/debug-logs-crashes.md`. **[source]** (file on disk)
+- **Cpp_debugging ("Asserts")**: docs imply `check()` is off in Shipping; in mod code `check()` and `ensure()` are live in Shipping. The detail is in `references/debug-logs-crashes.md`. **[source]**
 - **SMLEditor ("In Editor Testing Example")**: docs suggest testing in the editor to save relaunches. That holds for pure actor and widget logic only: `SML_ALLOW_PATCHES_IN_EDITOR=0` whenever `Source/FactoryGame/currentVersion.txt` exists (`SML.Build.cs:94-101`) and subsystems register only `!WITH_EDITOR` (`SatisfactoryModLoader.cpp:215`). **[source]**
 - **TestingResources / ExtraLaunchArguments ("map options")**: docs list `?startloc=`, `?sessionName=`, `?DayLength=` and others and say themselves "from 2021, may be outdated"; only `skipOnboarding`, `listen`, `loadgame` are verified. The string search of the game DLL is in `references/testing-launch.md`. **[?]**
 - **Cpp_setup ("Compiling")**: docs tell to rebuild the Development Editor target after a change of class structure; a risk with `-nocompileeditor`, not a docs error. The detail is in `references/build-install-debug.md` ("Stale editor DLLs"). **[?]**

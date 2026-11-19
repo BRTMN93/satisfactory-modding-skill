@@ -66,7 +66,7 @@ docs.ficsit.app (ReleaseMod) shows an example `.uplugin` with SML `^3.9.0`, `Gam
 - The zip has a separate DLL and PDB for each module (`FactoryGameSteam-<Module>-Win64-Shipping.dll`) and one shared `FactoryGameSteam-Win64-Shipping.modules`.
 - In the game the modules load in the order of the `.uplugin`, all in the same millisecond, before `Version check passed` and before the SML mod list.
 - The compiler enforces the boundary between modules. A module that does not have `FactoryGame` in its `Build.cs` dependencies cannot include a game header: `fatal error C1083: Cannot open include file: 'FGTrain.h': No such file or directory`. This can be used to enforce that pure logic does not depend on game classes. Such a module needs only the dependencies `Core` and `CoreUObject`.
-- Shared log category: see "Logging in the mod" in `references/build-install-debug.md`.
+- Shared log category: see "Logging in the mod" in `references/debug-logs-crashes.md`.
 
 **Third-party libraries in a mod** (docs.ficsit.app, `Development_Cpp_thirdparty`)
 - Module `Mods/<Mod>/Source/ThirdParty/<Lib>Library/<Lib>Library.Build.cs` with `Type = ModuleType.External`, headers in `inc`, libraries in `lib/<Platform>`, and the module added to the mod's `PublicDependencyModuleNames`. SML does the static-library variant itself (`SML.Build.cs:48-60`).

@@ -18,11 +18,11 @@ Verified on: game 1.x (changelist 513885; entries dated before 2026-10-13 were m
 
 | Symptom | Look first |
 |---|---|
-| Crash at start or while loading a save | `CrashContext.runtime-xml` ("Diagnosis" below); two root modules (rule 2); a hook without a filter (rule 3); a `Log<Mod>` category also used by Blueprint log nodes (`references/build-install-debug.md`) |
+| Crash at start or while loading a save | `CrashContext.runtime-xml` ("Diagnosis" below); two root modules (rule 2); a hook without a filter (rule 3); a `Log<Mod>` category also used by Blueprint log nodes (`references/debug-logs-crashes.md`) |
 | The mod is missing from the mod list | `LogSatisfactoryModLoader: Display: <Mod>` in the log; the install folder (rule 8); `GameVersion` and the SML dependency in `.uplugin` (`references/mod-structure.md`); "module could not be found": a Steam-only build in the EGS game (`references/build-install-debug.md`) |
 | C++ works, assets or Blueprints are missing | `LogPakFile: Mounted Pak file` for the mod; the install folder (rule 8) |
 | A hook or a change has no effect | tested in the editor (rule 1); `Successfully hooked` in the log; hooks installed in `POST_INITIALIZATION` (rule 3) |
-| Installing fails: "Permission denied", "Close the game first" | the game still runs or hangs on exit (`references/testing.md`, "A game that hangs on exit") |
+| Installing fails: "Permission denied", "Close the game first" | the game still runs or hangs on exit (`references/testing-environment.md`, "A game that hangs on exit") |
 | The self-built mod is gone or replaced | SMM or a game update (rule 13; `references/build-install-debug.md`, "Adding the same mod in SMM overwrites your version") |
 | A game started by a script sits in the menu, the log is `FactoryGame_2.log` | `steam_appid.txt` (`references/testing.md`, "Launching the game for tests") |
 | Compile errors `C4456`/`C4458`, unknown game classes or members | rule 9; the headers' changelist against the game's (`scripts/doctor.ps1`) |
@@ -37,14 +37,14 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Setting up the environment from scratch; updating a mod to a new game or SML version | `references/setup.md`, `references/updating.md` |
 | `.uplugin`, `Build.cs`, GameFeatures, AccessTransformers | `references/mod-structure.md` |
 | Modules, lifecycle, hooks | `references/sml-api.md` |
-| Config, subsystems, RCO, commands | `references/sml-config-networking.md` |
+| Config, subsystems, RCO, commands | `references/sml-config-networking.md`, `references/sml-networking-commands.md` |
 | Content registration (schematics, recipes, tags, resource sink points), session settings | `references/sml-content-sessions.md` |
 | Buildables (actors and lightweight), factories, saves, managers, map; holograms, power, inventories, crates, painting, icons, custom levels, ADA, audio | `references/game-classes.md`, `references/game-systems.md` |
-| Packaging, installing, SMM, logs, crashes, VRAM | `references/build-install-debug.md` |
-| Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md` |
+| Packaging, installing, SMM, logs, crashes, VRAM | `references/build-install-debug.md`, `references/debug-logs-crashes.md` |
+| Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md`, `references/coroutines-compiler.md` |
 | UI injection into game windows, widget hooks from C++, popups, searchable lists | `references/ui.md` |
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
-| Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-launch.md` |
+| Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-environment.md`, `references/testing-launch.md` |
 | Automated test runs: watchers (`scripts/watch-run.sh`), series, queues, sub-agents | `references/test-automation.md`, `references/test-queues.md` |
 | Working conventions for a series of tests: announcing, results file for long series, run register (no duplicate runs), backlog, review, models per job | `references/test-discipline.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
@@ -96,7 +96,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
 8. **Install with the game closed and into the right folder.** A game feature mod goes to `FactoryGame\Mods\GameFeatures\<Mod>`. In the wrong folder the C++ runs but the asset paks do not mount.
 9. **Shadowed names are compile errors** (`C4456`, `C4458`, because UHT runs with `-WarningsAsErrors`). Packaging takes minutes, so group changes before a build.
 10. **Measure instead of guessing.** Log the duration of work phases, measure the VRAM of the game process alone (`scripts/vram.ps1`) and do the three-loads test: load the save three times in a row, returning to the menu in between. One run is a hint, not a statistic.
-11. **Copy anything outside your project before you touch it, and put it back afterwards:** saves, `GameUserSettings.ini`, SMM profiles (`%APPDATA%\ficsit\profiles.json`), the game's `Mods` folder. A copy of a save keeps the session name, so autosaves during tests overwrite the original's slots; test window sizes stay in `GameUserSettings.ini` (`references/testing.md`).
+11. **Copy anything outside your project before you touch it, and put it back afterwards:** saves, `GameUserSettings.ini`, SMM profiles (`%APPDATA%\ficsit\profiles.json`), the game's `Mods` folder. A copy of a save keeps the session name, so autosaves during tests overwrite the original's slots; test window sizes stay in `GameUserSettings.ini` (`references/testing.md`, `references/testing-environment.md`).
 12. **Multiplayer:** the client (`IsNetMode(NM_Client)`) and the dedicated server (`FPlatformProperties::IsServerOnly()`) can do different things than the host. Do not change the RPC format without need; then different mod versions can play together.
 13. **Keep a backup of a working build outside the game folder,** with a note on how to restore it. A game or SMM update can remove or disable a self-built mod.
 14. **Known crash traps:** `TArray::Add` of its own element, clearing a looping timer from its own lambda, `CollectGarbage` in a world timer, `RequestExit` from a timer callback, a `static` owning rooted `UObject`s, and a new `.cpp` that regroups unity blobs and breaks an untouched file (`references/patterns-and-pitfalls.md`, items 21, 22, 24, 26–28).
@@ -130,7 +130,7 @@ The manual command, the zip layout and the details are in `references/build-inst
   - `LogPakFile: Mounted Pak file`: the paks are mounted.
 - **Crash:** `%LOCALAPPDATA%\FactoryGame\Saved\Crashes\UECC-Windows-*\CrashContext.runtime-xml`, with `ErrorMessage` and `CallStack` inside.
 - **Hitches:** many log lines with the same frame number (second bracket) spread over seconds.
-- **More:** `references/build-install-debug.md`.
+- **More:** `references/debug-logs-crashes.md`.
 
 ### Before a release
 Go through the checklist in `references/testing.md`: every build target you release, a small and a large save, 3 loads of the save with a return to the menu, host with a client and a dedicated server, a clean log, bumped versions, release notes with numbers from measurements.
