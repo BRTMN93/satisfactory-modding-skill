@@ -12,6 +12,7 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | Driving a train through its timetable (stops, errors, held trains) | `domains/railroad/driving-timetable.md` |
 | The game's route search, route graph and costs | `domains/railroad/route-search.md` |
 | What the autopilot does with a route | `domains/railroad/route-autopilot.md` |
+| The autopilot's speed limits, braking curve and ATC data (limiting a train from code) | `domains/railroad/autopilot-speed-atc.md` |
 | Signals and track connections | `domains/railroad/signals.md` |
 | How signals are placed and what the game checks (blocks, valid placement, exits) | `domains/railroad/signal-placement.md` |
 | Hook targets in the railway signalling, holding a train at a signal with hooks | `domains/railroad/signal-hooks.md` |
