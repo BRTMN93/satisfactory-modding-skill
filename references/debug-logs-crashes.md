@@ -27,6 +27,7 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - A game with only SML has constant errors in the log unrelated to mods (DLSS `kFeatureDLSS_G`, `t.MaxFPS`, Niagara, MVVM in `BPW_JoinGame`, `Array_Sort` in SML's `Widget_SessionSettings`).
 - Loading a freshly created save (new game, only SML installed) also logs several `LogSave: Error: Object Reference '<id>::Persistent_Level:PersistentLevel.BP_CreatureSpawner<N>' is contained inside of the World Partition Cell ...` lines, and the same for `BP_Spline<N>`. Exclude them when comparing error sets.
 - Method: `grep -E "Fatal|: Error:"` in both logs, strip the timestamps (`sed -E 's/^\[[^]]*\]\[[^]]*\]//'`), `sort -u` and `diff`. Observed: the set was identical to the one from the `ExampleMod` log.
+- The game client's log carries `LogEOSSDK: Warning: LogEOSRTC: TickTracker Tick is delayed. TimePeriod=[10.0...s] ...` about every 10 s while it is connected to a dedicated server, and once with a longer period while the world loads. It shows in runs that pass with normal frame times, so it is noise from the EOS voice/RTC ticker, not a sign of a hitch of the game; a log watcher should not report it as an anomaly. Evidence: client logs of 10 passing `<scenario>` client runs against a local dedicated server, each with 5–10 such lines and no frame-time problem. (2026-11-21, game 520140, SML 3.12.1)
 
 **Logging in the mod**
 - Own category: `DECLARE_LOG_CATEGORY_EXTERN(LogMyMod, Display, All)`.
