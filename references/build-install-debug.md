@@ -41,6 +41,9 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 
 A mod with assets only has no `Binaries` directory in the zip.
 
+- **[source]** Blueprint compile errors in a mod's content fail packaging at the cook step: the cook log ends with `Failure - <N> error(s), <M> warning(s)`, then `Cook failed.` and `AutomationTool exiting with ExitCode=25 (Error_UnknownCookFailure)`. The C++ build before it succeeds. Check the mod with `CompileAllBlueprints` (see tools.md) before a packaging run. Evidence: RunUAT `PackagePlugin` of a mod with 7 failing Blueprints, Steam target. (2026-11-21, game 520140, SML 3.12.1, UE 5.6.1-CSS)
+- Measurement: the first `PackagePlugin` run of the Steam target in a freshly copied starter project (copy kept `Intermediate`, dropped `Saved`) compiled 309 actions in 5 min 53 s; the cook of a 65-asset mod took 88 s. Conditions: the copy's source project had been built before. (2026-11-21, game 520140, SML 3.12.1, UE 5.6.1-CSS)
+
 **Release packaging (Alpakit Release) [source].** The release profile is the same `PackagePlugin` call with `-clientconfig=Shipping -serverconfig=Shipping -utf8output -DLCName=<Mod> [-build, if the mod has modules] -platform=Win64 -server -serverplatform=Win64+Linux -nocompileeditor -installed -merge` and **no `-Target`** (`AlpakitProfile.cpp:68-113`, `Alpakit.cpp:224-236`, `PackagePlugin.cs:126-158,173-213`). The targets come from `Config/Alpakit.ini` (`references/mod-structure.md`).
 - Without `-Target` the `Windows\` folder holds the files for both clients: `FactoryGameSteam-...` and `FactoryGameEGS-...` DLLs and `.modules` files.
 - Output in `<Project>\Saved\ArchivedPlugins\<Mod>\`: one zip per target, `<Mod>-<Platform>.zip` with the files at the zip root, and the merged `<Mod>.zip` with `Windows\`, `WindowsServer\` and `LinuxServer\`. Upload the merged one, the largest. Seen on disk in a packaged zip. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
