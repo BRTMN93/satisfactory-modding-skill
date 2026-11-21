@@ -111,6 +111,7 @@ Compiles FactoryGame, SML, Wwise and the mods. docs.ficsit.app (project_setup) s
 - UBT chooses the number of processes at the start (line `Determining max actions to execute in parallel`), so close the browser, Docker and WSL before the compile, not during it.
 - Do not kill `dotnet.exe` processes from the engine folder during compiling or packaging: that is UnrealBuildTool itself.
 - Output: `Binaries/Win64/UnrealEditor-FactoryGame.dll`, and for mods with C++ `Mods/.../Binaries/Win64/UnrealEditor-<Mod>.dll`. A mod with assets only (e.g. `ExampleMod`) has no DLL.
+- Copying a starter project with `robocopy /E /MT:16`, skipping `Saved` and other mods' folders, took 22 min for 35.4 GB (46426 files, 0 failures); the engine stays shared. The copy's first editor build (`Build.bat FactoryEditor Win64 Development`, 393 actions, UBA local) took 9 min 15 s. The editor target is named `FactoryEditor` (`Source/FactoryEditor.Target.cs`), not `FactoryGameEditor` (that fails with "Couldn't find target rules file"). Game 520140, UE 5.6.1-css-83.
 
 ### 9. First editor launch
 - Takes about 17 min (`LogUnrealEdMisc: Total Editor Startup Time, took 1017`), mainly because of shader compilation in several `ShaderCompileWorker` processes. Later launches are fast.
@@ -119,6 +120,7 @@ Compiles FactoryGame, SML, Wwise and the mods. docs.ficsit.app (project_setup) s
 - **Alpakit in the editor.** Alpakit adds two icons to the toolbar, after the Play group and next to **Platforms**: **Alpakit Dev** (an alpaca) and **Alpakit Release** (a rocket). The same windows and **Alpakit Log** are in the **File** menu, in the project section. The mod wizard is the **Create Mod** button in the **Alpakit Dev** window. Templates: Blueprint Only, C++ & Blueprint, Blueprint Library (Advanced), C++ & Blueprint Library (Advanced). The first two create a game feature mod. The wizard warns that the plugin name (the mod reference) cannot be changed later. Source: `Mods/Alpakit/Source/Alpakit/Private/Alpakit.cpp`, `AlpakitDevWidget.cpp`, `Mods/Alpakit/Templates/templates.json` and the editor itself.
 - **In UE 5.6 the bottom file panel is called Content Drawer, not Content Browser.** A mod's content is in it under `Plugins` → `<Mod> Content`. If `Plugins` is not visible, enable **Settings** → **Show Plugin Content**. Instructions for the user should use the name shown in the editor.
 - Normal errors in this log: `LogWwiseProjectDatabase: Error: No JSON Metadata file found … GeneratedSoundBanks/Windows` and `LogWwiseResourceCooker: Error: GetInitBankCookedData … No data for platform` (no soundbanks), and also `LogAutomationTest: Error: … StructProperty … is not initialized properly` for structs from the game headers.
+- `UnrealEditor-Cmd.exe <uproject> -unattended -nullrhi -ExecCmds="Quit"` opens the project and mounts the mod plugins (`LogPluginManager: Mounting Mod plugin <Mod>`), but did not exit by itself; the process hung for 40+ min after the last log line. Use a timeout when scripting it.
 
 ### 10. Moving the editor cache off drive C: (optional)
 The editor's cache (Zen DDC) grows on drive C:, but it can be moved.
