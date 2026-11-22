@@ -5,14 +5,13 @@ description: Knowledge and procedures for creating, fixing, building, testing an
 
 # Satisfactory modding
 
-Verified on: game 1.x (changelist 513885; entries dated before 2026-10-13 were made on 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), SML 3.12.0, Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
+Verified on: game 1.x (base: changelist 513885 and SML 3.12.0; part of the entries were checked up to changelist 520140 and SML 3.12.1, the date is on each entry; entries dated before 2026-10-13 were made on 502094), UE 5.6.1-CSS (tag `5.6.1-css-83`), Windows, Steam. The knowledge comes from work on real C++ mods (fixes, performance, pull requests to mod authors) and from reading the SML code and the game headers.
 
-## Four rules for every session, read them first
+## Two rules for every session, read them first
 
-1. **Say nothing while a run goes; the chat gets only an allow-list.** While a run, a queue or a series is in progress, write no text between tool calls: no "checking the log", no phase, watcher, wait or step narration, no restating what a tool returned, no reasoning aloud. The only things allowed in the chat: the result of a run as one line (`PASS`/`FAIL`, X of Y, the scenario), a failure with the evidence line, a rebuild or action the user must do before the tests can go on (a marked block at the top), a question or a decision that is theirs, and the summary at the end of the series. Fix broken builds and your own slips without narrating them. While a run goes the chat does not wait actively: it ends its turn once the run and its watchers are started and goes on when a watcher's report or a completion notice arrives (`references/test-discipline.md`). Details: `references/test-discipline.md`, "Announce a series once, then stay quiet".
-2. **Closing a task with entries in `learned/`: tell the folding chat before you close.** If `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` with `SendMessage` as the last step, every time (`references/learning.md`, section 3).
-3. **Every prompt for a new chat comes with its model and effort,** in a clearly marked block at the top of the same message ("New chat: model X, effort Y, set it before the first message"), with a push notification where the user is not watching. A prompt without them is not finished.
-4. **A working chat never edits, commits or resets this skill's folder; it only writes entries to `learned/`,** and the folding chat (or, without one, a single session on the user's say) folds them. Entries state facts with placeholders (`<station A>`, `<train>`, `<scenario>`, `<Mod>`), never project names, chat numbers or personal data (`references/learning.md`, section 1). Push and pull requests only when the user says so. Rules 2 and 4 are enforced by `scripts/skill-hooks.cjs` when it is registered; a broken rule is recorded and counted (`references/learning.md`, section 6).
+- **Inbox rule: closing a task with entries in `learned/`, tell the folding chat before you close.** If `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` with `SendMessage` as the last step, every time (`references/learning.md`, section 3).
+- **Skill-folder rule: a working chat never edits, commits or resets this skill's folder; it writes only entries to `learned/` (and its own private `local/`),** and the folding chat (or, without one, a single session on the user's say) folds them. Entries state facts with placeholders (`<station A>`, `<train>`, `<scenario>`, `<Mod>`), never project names, chat numbers or personal data (`references/learning.md`, section 1). Push and pull requests only when the user says so. Both rules are enforced by `scripts/skill-hooks.cjs` when it is registered; a violation is written under `## Rule violations` in `learned/findings.md` and counted (`references/learning.md`, section 6).
+- The owner's working conventions (silence while a run goes, model and effort for new chats, context limits) are in `local/user.md`, read at the start. Without it: do not wait actively for a run; start it and its watchers, end the turn and go on when a report arrives (`references/test-discipline.md`).
 
 ## Symptom index
 
@@ -49,7 +48,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Working conventions for a series of tests: announcing, results file for long series, run register (no duplicate runs), backlog, review, models per job | `references/test-discipline.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |
 | Scripts and tricks (git, Oodle, names inside assets) | `references/tools.md` |
-| A mod worked on over many sessions: state document budget, pass criteria, evidence tables, closing checklist, compact at 500k tokens of context (hard stop at 600k) (`scripts/check-project-state.ps1`) | `references/project-hygiene.md` |
+| A mod worked on over many sessions: state document budget, pass criteria, evidence tables, closing checklist, compacting and handing over a long context (`scripts/check-project-state.ps1`) | `references/project-hygiene.md` |
 | Open questions | `references/open-questions.md` |
 | Recording findings, the inboxes, folding them in, privacy check | `references/learning.md` |
 | Pull requests to this skill, updating from upstream, merging contributions (maintainer) | `references/upstream.md` |
@@ -99,7 +98,7 @@ If `local/user.md` exists in this skill's folder, read it at the start. It holds
 11. **Copy anything outside your project before you touch it, and put it back afterwards:** saves, `GameUserSettings.ini`, SMM profiles (`%APPDATA%\ficsit\profiles.json`), the game's `Mods` folder. A copy of a save keeps the session name, so autosaves during tests overwrite the original's slots; test window sizes stay in `GameUserSettings.ini` (`references/testing.md`, `references/testing-environment.md`).
 12. **Multiplayer:** the client (`IsNetMode(NM_Client)`) and the dedicated server (`FPlatformProperties::IsServerOnly()`) can do different things than the host. Do not change the RPC format without need; then different mod versions can play together.
 13. **Keep a backup of a working build outside the game folder,** with a note on how to restore it. A game or SMM update can remove or disable a self-built mod.
-14. **Known crash traps:** `TArray::Add` of its own element, clearing a looping timer from its own lambda, `CollectGarbage` in a world timer, `RequestExit` from a timer callback, a `static` owning rooted `UObject`s, and a new `.cpp` that regroups unity blobs and breaks an untouched file (`references/patterns-and-pitfalls.md`, items 21, 22, 24, 26–28).
+14. **Known crash traps:** `TArray::Add` of its own element, clearing a looping timer from its own lambda, `CollectGarbage` in a world timer, `RequestExit` from a timer callback, a `static` owning rooted `UObject`s, and a new `.cpp` that regroups unity blobs and breaks an untouched file (`references/patterns-and-pitfalls.md`, items 21, 27, 28 and 34; items 22, 24 and 26 are still **[?]**).
 
 ## Procedures
 
@@ -118,12 +117,12 @@ The script does both:
 - Without `-GameDir` it only packages.
 - `-Target ''` builds both targets, Steam and EGS. By default it builds Steam only, which is enough for local tests.
 
-A repeat packaging run where only the mod changed takes 1.3–5 min. The first one takes about 47 min.
+A repeat packaging run where only the mod changed takes 1.3–5 min. The first one takes 21–47 min.
 
 The manual command, the zip layout and the details are in `references/build-install-debug.md`.
 
 ### Diagnosis
-- **Log:** `%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log`. Times are UTC, and the game renames the old log on every start. Live: `scripts/watch-log.ps1 -Pattern 'LogMyMod|LogSatisfactoryModLoader|Fatal error'`.
+- **Log:** `%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log`. Line stamps and backup names are UTC, the first line `Log file open` is local time, and the game renames the old log on every start (`references/debug-logs-crashes.md`). Live: `scripts/watch-log.ps1 -Pattern 'LogMyMod|LogSatisfactoryModLoader|Fatal error'`.
 - **Is the mod working:**
   - `LogSatisfactoryModLoader: Display: <Mod>: <version>`: the mod loaded,
   - `LogNativeHookManager: … Successfully hooked`: the hooks are installed,
@@ -143,7 +142,7 @@ Check the licence before you fork. Send changes as separate pull requests and pu
 The game, SML and the engine change, and this skill only stays useful if what each session discovers flows back into it. Full procedure: `references/learning.md`.
 
 - **While you work:** as soon as you establish something the skill does not have, find that the skill is wrong, or test a **[source]**/**[?]** claim, add an entry to the inbox of its category (core: `learned/findings.md`, a domain: `learned/<domain>.md`, see `references/learning.md`, section 1) with its marker, evidence, date and versions. Tell the user in one line. Search the skill first so you do not duplicate it. Leave out project decisions and anything personal. A working session only records; folding into the files is a separate step.
-- **When a modding task is done:** if entries were added in this chat and `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` before you close, whatever the count (rule 2 above). Otherwise, if 5 or more entries are waiting, or a correction of an unmarked statement, or an entry that prevents a crash or data loss, ask the user once: fold the findings into the skill, fold them and open a pull request to the skill's upstream repository, or not now.
+- **When a modding task is done:** if entries were added in this chat and `local/user.md` names a chat that folds the inbox, send it `fold the findings inbox` before you close, whatever the count (the inbox rule above). Otherwise, if 5 or more entries are waiting, or a correction of an unmarked statement, or an entry that prevents a crash or data loss, ask the user once: fold the findings into the skill, fold them and open a pull request to the skill's upstream repository, or not now.
 - **Updating:** at the start of a modding task, once per session, offer in one line to check the upstream for a newer skill (details and when: `references/upstream.md`, section 2). An update commits the local state first and then merges; it never overwrites local knowledge that the upstream lacks, and it ends with a list of what only this copy knows, offered as a pull request.
 - **Maintainer:** the repository's owner can ask to merge the users' pull requests into a new version (`references/upstream.md`, section 3; the owner is named in `local/user.md`).
 - **Publishing needs consent.** Push and pull request only after the user says yes in this session. Run `scripts/check-private.ps1` before every commit.

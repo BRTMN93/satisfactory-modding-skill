@@ -1,4 +1,4 @@
-# Railways: signals, track connections, holding a train at a signal
+# Railways: signals and track connections
 
 Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railroad/README.md`). Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 

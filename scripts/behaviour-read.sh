@@ -11,6 +11,7 @@
 LOG="$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"
 FROM="${1:-0}"; ID="${2:-}"
 CAT="${MOD_LOG_CATEGORY:-LogMyMod}"
+if [ -z "$MOD_LOG_CATEGORY" ]; then echo "WARNING: MOD_LOG_CATEGORY is not set, using the default LogMyMod; a run of another mod reads as no new lines"; fi
 sleep "${WATCH_SECONDS:-90}"
 if [ ! -f "$LOG" ]; then echo "no log yet"; echo "LINES $FROM $ID"; exit 0; fi
 N=$(wc -l < "$LOG")
@@ -26,5 +27,5 @@ if [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; then
 fi
 [ "$N" -lt "$FROM" ] && FROM=0
 tail -n +"$((FROM + 1))" "$LOG" | head -n "$((N - FROM))" | show | cap
-if ! tasklist 2>/dev/null | grep -Eqi "FactoryGame(Steam|EGS)-Win64"; then echo "GAME CLOSED"; fi
+if ! tasklist 2>/dev/null | grep -Eqi "FactoryGame(Steam|EGS)-Win64|FactoryServer[A-Za-z]*-Win64"; then echo "GAME CLOSED"; fi
 echo "LINES $N $NOWID"

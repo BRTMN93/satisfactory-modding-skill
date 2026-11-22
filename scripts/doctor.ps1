@@ -16,6 +16,7 @@ $envFile = Join-Path $root 'local\env.md'
 $old = @{}
 if (Test-Path $envFile) { Get-Content $envFile | ForEach-Object { if ($_ -match '^- (\w+): `(.*)`$') { $old[$Matches[1]] = $Matches[2] } } }
 if (-not $Project) { $Project = $old['Project'] }
+if ($Project -like '*.uproject') { $Project = Split-Path $Project }   # a .uproject file is accepted too
 if (-not $Game) { $Game = $old['Game'] }
 if (-not $Engine) { $Engine = $old['Engine'] }
 
@@ -51,8 +52,10 @@ $found = [ordered]@{
 
 $warn = @()
 $verified = (Get-Content (Join-Path $root 'SKILL.md') | Where-Object { $_ -like 'Verified on:*' } | Select-Object -First 1)
-if ($verified -match 'changelist (\d+)' -and $gv -and "$($gv.Changelist)" -ne $Matches[1]) { $warn += "game changelist $($gv.Changelist), the skill is verified on $($Matches[1]): re-check statements a task depends on (references/learning.md, section 2)" }
-if ($verified -match 'SML (\d+\.\d+\.\d+)' -and $sml -and $sml.VersionName -ne $Matches[1]) { $warn += "SML $($sml.VersionName), the skill is verified on $($Matches[1])" }
+$knownCl = [regex]::Matches("$verified", 'changelist (\d+)') | ForEach-Object { $_.Groups[1].Value }
+$knownSml = [regex]::Matches("$verified", 'SML (\d+\.\d+\.\d+)') | ForEach-Object { $_.Groups[1].Value }
+if ($knownCl -and $gv -and "$($gv.Changelist)" -notin $knownCl) { $warn += "game changelist $($gv.Changelist), the skill's base is $($knownCl[0]) and its newest checked entries $($knownCl[-1]): re-check statements a task depends on (references/learning.md, section 2)" }
+if ($knownSml -and $sml -and $sml.VersionName -notin $knownSml) { $warn += "SML $($sml.VersionName), the skill's base is $($knownSml[0]) and its newest checked entries $($knownSml[-1])" }
 if ($verified -match '(\d+\.\d+\.\d+-css-\d+)' -and $found.EngineTag -and $found.EngineTag -ne $Matches[1]) { $warn += "engine $($found.EngineTag), the skill is verified on $($Matches[1])" }
 if ($hdr -and $gv -and $hdr -ne "$($gv.Changelist)") { $warn += "starter project headers are for changelist $hdr, the game is $($gv.Changelist) (references/patterns-and-pitfalls.md, pitfall 16)" }
 foreach ($k in 'Game', 'Engine') { if (-not $found[$k] -or -not (Test-Path $found[$k])) { $warn += "$k not found: pass -$k <folder>" } }

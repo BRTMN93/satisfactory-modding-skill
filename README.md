@@ -34,18 +34,16 @@ The split is deliberate: a mod with a window never loads the railway files, and 
 
 Every statement carries a marker: no marker = verified in the packaged game, **[source]** = read from code only, **[?]** = uncertain. Check a marked statement before you build on it.
 
-Verified on: game changelist 513885, SML 3.12.0, UE 5.6.1-CSS (the line "Verified on" in `SKILL.md` is the source). `scripts/doctor.ps1` warns when your install differs.
+Verified on: base game changelist 513885 and SML 3.12.0, with part of the entries checked up to changelist 520140 and SML 3.12.1 (dated per entry), UE 5.6.1-CSS (the line "Verified on" in `SKILL.md` is the source). `scripts/doctor.ps1` warns when your install differs.
 
-## Four rules every session reads first
+## Two rules every session reads first
 
 They sit at the top of `SKILL.md`:
 
-1. **Say nothing while a run goes.** Only results, failures, things you must build or decide, questions and the end summary reach the chat. A chat with many or long test runs keeps its results in a file, not in the conversation, with a `Key results` block that is never trimmed, so the earliest results cannot be lost. While a run goes the chat is idle: it ends its turn once the run and its watchers are started, and goes on from a watcher's report, because an active chat re-reads its whole context on every call. Watchers follow the run's length: none up to 1 minute, a behaviour watcher over 1 minute, a result and behaviour pair over 3 minutes.
-2. **Closing with new inbox entries: tell the folding chat** (`fold the findings inbox`).
-3. **Every prompt for a new chat carries its model and effort.**
-4. **A working chat never edits, commits or resets the skill's folder;** it only writes to `learned/`.
+1. **Closing with new inbox entries: tell the folding chat** (`fold the findings inbox`).
+2. **A working chat never edits, commits or resets the skill's folder;** it only writes to `learned/`.
 
-A long project also has context limits (`references/project-hygiene.md`, section 8): at 500k tokens of context a chat starts no new task or series, and at 600k it stops, writes its checkpoint and compacts or hands the rest over. A handover is a fresh session that starts from the checkpoint and results files, never a fork, because a fork carries the whole conversation and starts at the same size.
+Your own working conventions (silence while a run goes, model and effort for new chats, context limits) go in `local/user.md`; the skill reads it at the start. A handover of a long chat is a fresh session, never a fork (`references/project-hygiene.md`, section 8).
 
 A series of in-game runs also keeps a **run register** (`references/test-discipline.md`): each run is identified by scenario, save, arguments, build, versions and conditions, and before a series the planned runs are compared with the register, so a run that already exists is not repeated and runs that give the same evidence are merged. A repeat on new code is never blocked, and the mechanism is marked unverified until a series has run with it.
 

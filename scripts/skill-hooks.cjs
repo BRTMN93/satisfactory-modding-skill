@@ -24,12 +24,21 @@ function guard(e) {
   if (fp && inside(fp) && !allowed(fp)) {
     deny(`${fp} is in the satisfactory-modding skill. A working chat writes only to learned/ (or local/); folding is a separate step (references/learning.md, sections 1 and 4).`);
   }
-  // Bash: block git commands that change the skill's repository; other shell edits are not covered.
+  // Bash and PowerShell: block git commands that change the skill's repository, and shell writes into its tracked folders.
+  // Heuristic: it reads the command text only, so the skill's folder name or the .claude/skills path must appear in it.
   const cmd = i.command || '';
-  const gitWrite = /\bgit\b[^|;&\n]*\b(commit|reset|checkout|restore|rebase|merge|push|stash|clean)\b/.test(cmd);
-  const touchesSkill = /satisfactory-modding/i.test(cmd);
-  if (gitWrite && touchesSkill) {
+  if (!/satisfactory-modding|\.claude[\\/]+skills/i.test(cmd)) return;
+  const gitWrite = /\bgit\b[^|;&\n]*\b(commit|reset|checkout|restore|rebase|merge|push|pull|stash|clean|add|rm|mv|tag|switch|apply|am|cherry-pick|revert)\b/.test(cmd);
+  if (gitWrite) {
     deny('git commands that change the satisfactory-modding skill repository run only in a folding session (references/learning.md, section 4).');
+  }
+  const shellCmd = cmd.replace(/\d*>\s*\/dev\/null|\d*>\s*\$null|\d*>&\d/g, ''); // stderr redirects are no writes
+  const shellWrite = />|\bsed\s+-[a-z]*i|\btee\b|\bcp\b|\bmv\b|\brm\b|\bperl\s+-[a-z]*i|Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Rename-Item/.test(shellCmd);
+  if (shellWrite) {
+    const targets = [...cmd.matchAll(/satisfactory-modding[\\/]+([^\s'"|;&)]*)/gi)].map(m => m[1].replace(/\\/g, '/'));
+    if (targets.some(t => t && !/^(learned|local)\//.test(t))) {
+      deny('shell writes into the tracked folders of the satisfactory-modding skill run only in a folding session (references/learning.md, section 1).');
+    }
   }
 }
 
@@ -51,9 +60,12 @@ function stop(e) {
       if (c.type !== 'tool_use') continue;
       const inp = c.input || {};
       const fp = inp.file_path || '';
-      if (/^(Write|Edit|MultiEdit)$/.test(c.name) && fp && inside(fp) &&(norm(fp) + '/').startsWith(rootN + 'learned/')) wrote = true;
-      if (/learned[\\/][\w.-]+\.md/.test(inp.command || '') && />>|Add-Content|Out-File/.test(inp.command || '')) wrote = true;
-      if (JSON.stringify(inp).includes('fold the findings inbox')) sent = true;
+      if (/^(Write|Edit|MultiEdit)$/.test(c.name) && fp && inside(fp) &&(norm(fp) + '/').startsWith(rootN + 'learned/')) wrote = true, sent = false;
+      const isMsg = /SendMessage|send_message/i.test(c.name);
+      const cmdW = /learned[\\/][\w.-]+/.test(inp.command || '') && />|\btee\b|Add-Content|Set-Content|Out-File|\bcp\b|\bmv\b/.test(inp.command || '');
+      if (cmdW) { wrote = true; sent = false; }
+      // "sent" counts only a message tool call that comes after the last write to the inbox
+      if (isMsg && JSON.stringify(inp).includes('fold the findings inbox')) sent = true;
     }
   }
   if (!wrote || sent) return;
@@ -64,7 +76,7 @@ function stop(e) {
   let user = '';
   try { user = fs.readFileSync(path.join(root, 'local', 'user.md'), 'utf8'); } catch {}
   const reason = /fold/i.test(user)
-    ? 'This chat added entries to the satisfactory-modding inbox (learned/). Send the folding chat named in local/user.md the message "fold the findings inbox" with SendMessage, check it arrived, then close (SKILL.md rule 2).'
+    ? 'This chat added entries to the satisfactory-modding inbox (learned/). Send the folding chat named in local/user.md the message "fold the findings inbox" with SendMessage, check it arrived, then close (SKILL.md, the inbox rule).'
     : 'This chat added entries to the satisfactory-modding inbox (learned/). Apply references/learning.md section 3: count the waiting entries and ask the user once if a threshold is met, then close.';
   process.stdout.write(JSON.stringify({ decision: 'block', reason }));
 }

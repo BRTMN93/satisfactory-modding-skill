@@ -14,7 +14,7 @@ Part of the `satisfactory-modding` skill, railroad domain (index: `domains/railr
 
 ## Holding a train at a signal with hooks
 
-A train with a whole route can be held at a signal by hooks in the signalling (the hooks' signatures are in `references/sml-api.md`, "SML: hooks"). A route that ends at the signal does the same without any hook and without the long-wait error (`SDLE_LongWaitAtSignal`; see "Parking a train at the end of a route, without touching the signals" above).
+A train with a whole route can be held at a signal by hooks in the signalling (the hooks' signatures are in `references/sml-api.md`, "SML: hooks"). A route that ends at the signal does the same without any hook and without the long-wait error (`SDLE_LongWaitAtSignal`; see "Parking a train at the end of a route, without touching the signals" in `domains/railroad/own-routes.md`).
 
 - **How a signal gets its aspect, and how to make it read it again.** A signal caches its aspect (`AFGBuildableRailroadSignal::GetAspect()`). It takes a new one from the block it observes, through `FFGRailroadSignalBlock::GetAspectFor(signal)`, when that block reports a change.
   - The game calls `GetAspectFor` on changes, not every tick: about 1.3 calls a second in a world with three running trains and 16 signals (965 calls in 743 s).

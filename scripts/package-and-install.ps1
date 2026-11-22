@@ -3,7 +3,14 @@
 Packages a Satisfactory mod with RunUAT PackagePlugin (the command Alpakit runs) and, with -GameDir, installs it into the game.
 
 .EXAMPLE
-.\package-and-install.ps1 -EngineDir D:\UE\UE_5.6-CSS -Project D:\UE\MyProject\FactoryGame.uproject -Mod MyMod -GameDir D:\SteamLibrary\steamapps\common\Satisfactory
+.\package-and-install.ps1 -EngineDir <UE-CSS> -Project <Project>\FactoryGame.uproject -Mod MyMod -GameDir <Game>
+
+.PARAMETER Project
+The FactoryGame.uproject file, or the folder that holds it (the same value as the -Project folder of doctor.ps1).
+.PARAMETER GameDir
+Install into this game folder. The mod's folder in the game is emptied first, so files removed from the mod do not stay behind.
+.PARAMETER WaitForGameExit
+Wait for a running game to close (for example after a manual test) instead of stopping with an error.
 #>
 param(
     [Parameter(Mandatory)] [string] $EngineDir,
@@ -15,6 +22,7 @@ param(
     [switch] $WaitForGameExit                   # wait for a running game to close (e.g. after a manual test) instead of stopping
 )
 
+if (Test-Path $Project -PathType Container) { $Project = Join-Path $Project 'FactoryGame.uproject' }
 $uat = Join-Path $EngineDir 'Engine\Build\BatchFiles\RunUAT.bat'
 $uatArgs = @("-ScriptsForProject=$Project", 'PackagePlugin', "-project=$Project",
     '-clientconfig=Shipping', '-serverconfig=Shipping', '-utf8output', "-DLCName=$Mod",
@@ -47,6 +55,7 @@ $unzipped = Join-Path $env:TEMP "package-$Mod-unzipped"
 if (Test-Path $unzipped) { Remove-Item -Recurse -Force $unzipped }
 Expand-Archive -Path $zip -DestinationPath $unzipped
 New-Item -ItemType Directory -Force $dest | Out-Null
+Get-ChildItem $dest -Force | Remove-Item -Recurse -Force   # the zip is the whole mod: no stale paks or DLLs
 Copy-Item -Recurse -Force (Join-Path $unzipped 'Windows\*') $dest
 Remove-Item -Recurse -Force $unzipped
 

@@ -23,6 +23,7 @@ TEST="$1"; FROM="${2:-0}"; ID="${3:-}"
 STEP="${WATCH_SECONDS:-30}"
 CAT="${MOD_LOG_CATEGORY:-LogMyMod}"
 TAG="${TEST_TAG:-MYMOD_TEST}"
+if [ -z "$MOD_LOG_CATEGORY" ] && [ -z "$TEST_TAG" ]; then echo "WARNING: MOD_LOG_CATEGORY and TEST_TAG are not set, using the defaults LogMyMod / MYMOD_TEST; a run of another mod reads as no new step"; fi
 sleep "$STEP"
 # The game renames its log when it starts: for a moment there is no log file. Say so and keep the caller's position.
 if [ ! -f "$LOG" ]; then echo "RUN $TEST started ?"; echo "game not started yet"; echo "LINES $FROM $ID"; exit 0; fi
@@ -40,11 +41,12 @@ if [ -n "$ID" ] && [ "$ID" != "$NOWID" ]; then
 fi
 NEW=$(tail -n +"$((FROM + 1))" "$LOG" 2>/dev/null | head -n "$((N - FROM))")
 PROBLEMS=$(echo "$NEW" | grep -E "$TAG (FAILED|RESULT)|$TAG .*FAILED|$CAT: (Error|Warning)|Fatal error|Unhandled Exception|RESULT (PASS|FAIL|CRASH|TIMEOUT)" \
-  | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | { if [ -n "$IGNORE_PATTERN" ]; then grep -Ev "$IGNORE_PATTERN"; else cat; fi; }   | awk '!seen[$0]++' | head -10)
+  | sed -E 's/^\[[^]]*\]\[[^]]*\]//' | awk -v ig="$IGNORE_PATTERN" '/RESULT (PASS|FAIL|CRASH|TIMEOUT)/ || ig == "" || $0 !~ ig' | awk '!seen[$0]++' | head -10)
+# IGNORE_PATTERN never hides a RESULT line: a pattern that matched "RESULT FAIL" would swallow the run's verdict.
 if [ -n "$PROBLEMS" ]; then echo "$PROBLEMS"; fi
 PROGRESS=$(echo "$NEW" | grep "$TAG" | { if [ -n "$STATUS_PATTERN" ]; then grep -Ev "$STATUS_PATTERN"; else cat; fi; })
 if [ -z "$PROGRESS" ]; then echo "no new step for $STEP s"; fi
-if ! tasklist 2>/dev/null | grep -Eqi "FactoryGame(Steam|EGS)-Win64"; then
+if ! tasklist 2>/dev/null | grep -Eqi "FactoryGame(Steam|EGS)-Win64|FactoryServer[A-Za-z]*-Win64"; then
   # No game and nothing new in the log: the run is still packaging or starting
   if [ "$N" -gt "$FROM" ]; then echo "GAME CLOSED, watch over"; else echo "game not started yet"; fi
 fi

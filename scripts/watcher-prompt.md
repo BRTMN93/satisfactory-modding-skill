@@ -1,6 +1,6 @@
 # Watcher prompts
 
-Watchers by the run's expected length: up to 1 minute none, over 1 minute the behaviour watcher alone (it also reports `RESULT` and `GAME CLOSED`), over 3 minutes TWO watchers, started together right after the run starts and stopped together (`TaskStop`) when it ends: the result watcher (`scripts/watch-run.sh`, first prompt) and the behaviour watcher (`scripts/behaviour-read.sh`, second prompt), both on Haiku 5.5 at high effort; a mid-size model (Sonnet) instead only when the chat judges a run too complicated for Haiku, for example one result watcher following a queue; the script filters the lines itself. The result watcher alone misses a mod that misbehaves with every check green (`references/test-automation.md`).
+Watchers by the run's expected length: up to 1 minute none, over 1 minute the behaviour watcher alone (it also reports `RESULT` and `GAME CLOSED`), over 3 minutes TWO watchers, started together right after the run starts and stopped together (`TaskStop`) when it ends: the result watcher (`scripts/watch-run.sh`, first prompt) and the behaviour watcher (`scripts/behaviour-read.sh`, second prompt), both on a small model at high effort; a mid-size model instead only when the chat judges a run too complicated for a small model, for example one result watcher following a queue; the script filters the lines itself. The result watcher alone misses a mod that misbehaves with every check green (`references/test-automation.md`).
 
 ## Result watcher
 
@@ -25,7 +25,7 @@ You watch one automated test run of a Satisfactory mod. Do not analyse, fix or r
 
 ## Behaviour watcher
 
-Model: Haiku 5.5, high effort. Start values, read before the run starts like those of the result watcher: `FROM` is the log's line count (`wc -l < "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"`), `ID` is `head -n 1 "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log" | tr -dc "0-9.:-"`. `DROP_PATTERN` is an extended regex of repeated lines the watcher does not need (e.g. per-station status lines), or empty.
+Model: a small model, high effort. Start values, read before the run starts like those of the result watcher: `FROM` is the log's line count (`wc -l < "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log"`), `ID` is `head -n 1 "$LOCALAPPDATA/FactoryGame/Saved/Logs/FactoryGame.log" | tr -dc "0-9.:-"`. `DROP_PATTERN` is an extended regex of repeated lines the watcher does not need (e.g. per-station status lines), or empty.
 
 ---
 You watch the BEHAVIOUR of one automated test run of a Satisfactory mod (scenario <test>, started <time> in the game log). Another watcher reports results and errors; you look for misbehaviour a player would notice. Do not analyse code, fix or retry anything, never stop to ask, never edit files.
