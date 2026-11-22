@@ -75,12 +75,86 @@
     },
     {
       "id": 8,
-      "prompt": "scripts/doctor.ps1 says: WARNING: game changelist 510000, the skill is verified on 502094. I want to use the skill's advice on hooking AFGHUD::OpenInteractUI.",
+      "prompt": "scripts/doctor.ps1 says: WARNING: game changelist 530000, the skill's base is 513885 and its newest checked entries 520140: re-check statements a task depends on. I want to use the skill's advice on hooking AFGHUD::OpenInteractUI.",
       "expected_output": "Re-checks the statements the task depends on against the current headers or in the packaged game before relying on them (references/learning.md, section 2), and records the result (new date and versions, or a correction).",
       "expectations": [
         "Treats the advice as needing a re-check because the versions differ",
         "Checks the current headers or tests in the packaged game before relying on it",
         "Records the outcome in the inbox (confirmation with new versions, or a correction)"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "I changed my C++ and want to test it in the game. How do I package and install the mod?",
+      "expected_output": "Uses scripts/package-and-install.ps1 (or the manual command in references/build-install-debug.md), installs with the game closed into Mods\\GameFeatures\\<Mod> for a game feature mod, and checks the log afterwards (Diagnosis).",
+      "expectations": [
+        "Names scripts/package-and-install.ps1 or references/build-install-debug.md",
+        "Says the game must be closed and names the right install folder",
+        "Says how to check that the mod loaded (LogSatisfactoryModLoader line)"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "The game starts, but my mod is not in the mod list at all.",
+      "expected_output": "Symptom index row 'The mod is missing from the mod list': the log line from LogSatisfactoryModLoader, the install folder, GameVersion and the SML dependency in .uplugin.",
+      "expectations": [
+        "Uses the symptom index of SKILL.md",
+        "Checks the LogSatisfactoryModLoader line, the install folder and GameVersion/SML dependency in .uplugin"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "I am about to start a series of 12 automated test runs of my mod in the packaged game. How do I set it up?",
+      "expected_output": "Opens references/test-automation.md and references/test-discipline.md (and test-queues.md): a run table first, watchers by run length, a results file, a register of runs. If local/user.md has chat conventions, follows them.",
+      "expectations": [
+        "Opens references/test-automation.md or references/test-discipline.md",
+        "Mentions watchers (scripts/watch-run.sh) and a results file or register of runs",
+        "Does not wait actively inside a turn while a run goes"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Commit my changes to the skill folder now.",
+      "expected_output": "A working chat does not commit in the skill folder: the skill-folder rule of SKILL.md. Only the folding session commits, after scripts/check-private.ps1 reports Clean.",
+      "expectations": [
+        "Refuses to edit or commit in the skill folder from a working chat, citing the skill-folder rule",
+        "Says check-private.ps1 must be Clean before any commit in a folding session"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Satisfactory just got an update and my mod no longer builds. What do I do?",
+      "expected_output": "Opens references/updating.md: new starter project for the game's changelist, headers, SML version, rebuild, then the symptom list of known changes.",
+      "expectations": [
+        "Opens references/updating.md",
+        "Mentions refreshing the starter project/headers for the new changelist and checking the SML version"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "My mod works for the host but the client does nothing. Where do I look?",
+      "expected_output": "Opens references/multiplayer.md (and sml-config-networking.md for RCO and replication): client versus host, NM_Client checks, RPC.",
+      "expectations": [
+        "Opens references/multiplayer.md",
+        "Mentions the client/dedicated-server difference (IsNetMode(NM_Client)) or RPC/RCO"
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "I want to publish my mod on ficsit.app.",
+      "expected_output": "Opens references/publishing.md: targets, version, release notes; pushes and uploads only after the user says yes.",
+      "expectations": [
+        "Opens references/publishing.md",
+        "Does not upload or push without the user's yes"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "(local/user.md does not exist.) I just finished a modding task and added two entries to learned/findings.md. What do I do before closing?",
+      "expected_output": "Without a named folding chat: apply references/learning.md section 3 (count the waiting entries, ask once if a threshold is met), do not send a message to a chat that is not named.",
+      "expectations": [
+        "Does not send 'fold the findings inbox' to a chat that local/user.md does not name",
+        "Counts the waiting entries and asks the user once when a threshold of section 3 is met, or says it is not"
       ]
     }
   ]

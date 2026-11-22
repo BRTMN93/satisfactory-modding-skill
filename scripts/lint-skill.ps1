@@ -102,5 +102,9 @@ if ($Baseline) {
     }
 }
 
+# Reading aids (a note, not a problem): very long lines are hard for a model to scan; split them into a rule and its evidence.
+$long = @($kb | ForEach-Object { $f = $_; $n = 0; Get-Content $f.FullName -Encoding UTF8 | ForEach-Object { $n++; if ($_.Length -gt 1500) { "$($f.Name):$n ($($_.Length))" } } })
+if ($long) { Write-Host "note: $($long.Count) lines over 1500 characters, the longest first:"; $long | Sort-Object { [int](($_ -split '[()]')[1]) } -Descending | Select-Object -First 5 | ForEach-Object { Write-Host "  $_" } }
+
 $p
 if ($p) { Write-Host "$($p.Count) problem(s)" } else { Write-Host 'Clean' }
