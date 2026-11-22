@@ -2,6 +2,8 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own. Running the game, logs, crashes and measurements: `references/debug-logs-crashes.md`.
 
+Contents: Build and packaging; Shipping checks and times; Reading the result; Package contents and cook errors; Release and server packaging; Installing in the game, SMM, backups; Alpakit copy and load errors; SMM and backups
+
 ## Build and packaging
 
 Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling it directly is faster:
@@ -15,6 +17,8 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 - Without `-Target` it builds both targets, `FactoryGameEGS` and `FactoryGameSteam`. `-Target=FactoryGameSteam` halves local test time.
 - Servers: `-server -serverplatform=Win64+Linux`. Linux needs the toolchain from `references/setup.md`, "Linux toolchain".
 
+## Shipping checks and times
+
 **Checks in the Shipping build**
 - **[source]** Mod code is compiled with checks active in the Shipping build. The starter project's `Source/FactoryShared.Target.cs` sets `bUseChecksInShipping = UseChecksInShippingOverride` (`:74`), which is `true` by default (`:12`, `// MODDING EDIT: we want checks in shipping by default`), and the packaging log says `Building with command line overrides: ChecksInShipping: True (default: false); LinkType: Modular`. The setting becomes `USE_CHECKS_IN_SHIPPING=1` (engine `UEBuildTarget.cs:5814`) and `DO_CHECK` (`Build.h:305`); ensures follow it (`Build.h:211`). So in a mod both `check()` and `ensure()` are live in the Shipping build, and a failed `check()` stops the packaged game. docs.ficsit.app (Cpp debugging) advises `fgcheck()` because it is on in Shipping (`AssertionMacros.h:377`, always on); that advice is about the game's own code, not about mod code, which is built with the starter project's target rules. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - **[?]** Stale editor DLLs: the RunUAT line above passes `-nocompileeditor`, and Alpakit does the same when the editor is running (`AlpakitProfile.cpp:86`), so the cook runs against the editor DLLs that were built last. Observed: a mod's `UnrealEditor-<Mod>*.dll` files were 11 days older than its Shipping DLLs. The risk is for Blueprint assets derived from a `UCLASS` or `UPROPERTY` that was renamed or changed in type; docs.ficsit.app says to rebuild the Development Editor target (`FactoryEditor`) after a change of class structure. No failure was seen. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
@@ -23,6 +27,8 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
 - First Shipping packaging: 21–47 min. A mod with assets only in a fresh project: 21 min (game compile 297 actions in 700 s, cook 497 s, UnrealPak a few seconds).
 - Later runs, when only the mod changes: 1.3–5 min. Group your changes and compile once.
 - Measured with 16 GB RAM, a game feature mod with five small C++ modules, Steam target only: 49–215 s after a change in one `.cpp` file, 24–44 s with nothing changed.
+
+## Reading the result
 
 **How to read the result**
 - Success: `Result: Succeeded`, `BUILD SUCCESSFUL`, `AutomationTool exiting with ExitCode=0`.
@@ -33,6 +39,8 @@ Alpakit in the editor is only a wrapper around RunUAT `PackagePlugin`. Calling i
   - during the cook and in the game: `LogAssetManager: Warning: Invalid Primary Asset Type FGGameFeatureData:<Mod>: ChangeBundleStateForPrimaryAssets failed to find NameData`,
   - in the game: `LogPluginManager: Warning: Cannot mount plugin localization for '<Mod>' as the plugin isn't explicitly loaded`.
 - To follow the log, use the expression `error C[0-9]+|error LNK|fatal error|Result: (Succeeded|Failed)|BUILD (SUCCESSFUL|FAILED)`. First filter out the huge `[Adaptive Build] Excluded from … unity file` lines.
+
+## Package contents and cook errors
 
 **Packaging output:** `<Project>\Saved\ArchivedPlugins\<Mod>\<Mod>.zip`. Inside is a `Windows\` directory containing:
 - `<Mod>.uplugin` and `Resources\Icon128.png`,
@@ -45,6 +53,8 @@ A mod with assets only has no `Binaries` directory in the zip.
 - Measurement: the first `PackagePlugin` run of the Steam target in a freshly copied starter project (copy kept `Intermediate`, dropped `Saved`) compiled 309 actions in 5 min 53 s; the cook of a 65-asset mod took 88 s. Conditions: the copy's source project had been built before. (2026-11-21, game 520140, SML 3.12.1, UE 5.6.1-CSS)
 - Cook fails with `LogZenHttp: Error: Failed posting zen data (response 500) from prj/FactoryGame.<hash>/oplog/EditorDomain` (`Failure - 1 error(s)`, `AutomationTool exiting with ExitCode=25 (Error_UnknownCookFailure)`) when the Zen data folder `%LOCALAPPDATA%\UnrealEngine\Common\Zen\Data` is a junction to another drive and the project has no folder under `projects\` yet. The Zen server log (`<Zen data>\logs\zenserver.log`) shows `Failed to safely write file '…\projects\FactoryGame.<hash>\Project.zcb': unknown error. (3)`: zenserver (5.6.6) cannot create new directories through the junction; projects whose folders existed before the move keep working, so only a newly added project breaks. Workaround that let the cook pass twice in a row: create `<real Zen data>\projects\FactoryGame.<hash>\` by hand (Zen then writes `Project.zcb` itself) and copy an empty oplog skeleton `EditorDomain\` (`oplog.zcb`, `ops.zlog`, `ops.zops`, empty `temp\`) from another project's folder. An empty `EditorDomain\` folder alone does not help: on "creating oplog" Zen deletes it and fails to recreate it. **[?]** Lasting fix: start Zen with `--data-dir` on the real path instead of the junction. Evidence: four cooks failed with the error, the next two `BUILD SUCCESSFUL` after the workaround, full cook of 64 packages. (2026-11-22, game 520140, SML 3.12.1, zenserver 5.6.6)
 - Measurement: packaging a small C++ + Blueprint mod (64 cooked packages) for the Steam target takes 31–32 s when the C++ is unchanged (UBT 5 s, full cook 14–18 s, pak under 2 s); after adding a new C++ module UBT took 107 s for the Steam target. Starter project copied from another starter project, warm DDC. Evidence: UAT logs `Took …s to run`. (2026-11-22, game 520140, SML 3.12.1)
+
+## Release and server packaging
 
 **Release packaging (Alpakit Release) [source].** The release profile is the same `PackagePlugin` call with `-clientconfig=Shipping -serverconfig=Shipping -utf8output -DLCName=<Mod> [-build, if the mod has modules] -platform=Win64 -server -serverplatform=Win64+Linux -nocompileeditor -installed -merge` and **no `-Target`** (`AlpakitProfile.cpp:68-113`, `Alpakit.cpp:224-236`, `PackagePlugin.cs:126-158,173-213`). The targets come from `Config/Alpakit.ini` (`references/mod-structure.md`).
 - Without `-Target` the `Windows\` folder holds the files for both clients: `FactoryGameSteam-...` and `FactoryGameEGS-...` DLLs and `.modules` files.
@@ -80,6 +90,8 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 
 **The same mod in two folders.** When a mod lies under both `Mods\<Mod>` and `Mods\GameFeatures\<Mod>`, the engine uses the first one it found (`PluginManager.cpp:1249`), and that is the top-level `Mods\<Mod>` although "GameFeatures" sorts first. Tested with `Mods\<Mod>` at 1.0.1 and `Mods\GameFeatures\<Mod>` at 1.0.0: SML and the mod reported 1.0.1. The engine warns at discovery `LogPluginManager: Warning: The same version (v1) of plugin '<Mod>' exists at '../../../FactoryGame/Mods/<Mod>/<Mod>.uplugin' and '.../Mods/GameFeatures/<Mod>/<Mod>.uplugin' - second location will be ignored.` and then `A version of the '<Mod>' plugin has already been enabled (<path>); prioritizing that over the newly discovered version (<path2>)`; the warning compares the integer `Version` (both 1), not `SemVersion`. A stale copy in `Mods\<Mod>` therefore hides every new install in `GameFeatures`: delete the old install folder. (2026-10-24, game 513885, SML 3.12.0)
 
+## Alpakit copy and load errors
+
 **Alpakit "Copy to game" and the PackagePlugin switches**
 - Alpakit's copy deletes `<Game>\FactoryGame\Mods[\GameFeatures]\<Mod>` completely and then copies the staged mod (`PackagePlugin.cs:165-171`), and it needs `<Game>\FactoryGame` to exist (`:92-97`). Files put by hand into the installed mod folder are lost. Tested with `PackagePlugin -CopyToGameDirectory_Windows=<Game>`: a marker file left in the installed `Mods\GameFeatures\<Mod>` before packaging was gone afterwards and the folder held only the new files (`.uplugin`, `Binaries`, `Content\Paks`). **[source]** for the rest of this block.
 - The same from RunUAT: `-CopyToGameDirectory_Windows=<GameDir>` (copies by itself to `Mods\GameFeatures\<Mod>` or `Mods\<Mod>`; without `-merge` it builds only the target whose exe lies in `<GameDir>`, `PackagePlugin.cs:52-66,139-153`). `-LaunchGame_Windows=Steam|SteamDS|EpicEA|EpicExp|EpicDS|EpicDSExp|Custom` starts the game, with `-CustomLaunchPath_Windows=` and `-CustomLaunchArgs_Windows=` for `Custom`. The `Steam` type is `steam://rungameid/526870`, which carries no arguments, so only `Custom` can pass `-ini:...` or other switches (`LaunchGame.cs`).
@@ -91,6 +103,8 @@ Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | ? { $_.ExecutablePat
 - `This project requires the '<Mod>' plugin, which has a missing dependency on the 'SML' plugin` (`:2606`): SML is not installed. (2026-10-24, game 513885, SML 3.12.0)
 
 **[?] After switching a game branch or a major update** the game may refuse to start with mods; disable them first (SMM "Mods off", or the `-DisablePlugins` switch described in `references/testing-environment.md`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+## SMM and backups
 
 **Satisfactory Mod Manager (SMM, ficsit-cli)**
 - Mods installed by SMM have a `.smm` marker file. SMM does not touch a manual install without the marker: the mod survived a switch to a profile that did not include it.

@@ -4,7 +4,23 @@ Part of the `satisfactory-modding` skill. Open this domain only when the mod dea
 
 Most of this domain was first read from game headers (changelist 491125, later checked against 502094) and asset stubs. The parts without a marker were tested in the packaged game 502094 with SML 3.12.0 on a single player host: a test scenario wrote timetables from code and logged the train's delegates next to its state polled every 0.1 s. Check names against the current headers (the skill's base is changelist 513885, later entries are dated) (see `patterns-and-pitfalls.md`).
 
-| Topic | File |
+Symptom or question, then the files to open first (in order):
+
+| Symptom or question | Open first |
+|---|---|
+| A train does not leave a station, or leaves late | `domains/railroad/timetable-docking.md`, `domains/railroad/docking-phase-crane.md`, `domains/railroad/driving-timetable.md`, then `domains/railroad/signal-hooks.md` (held at a signal) |
+| A train stands at a signal for good (`SDLE_LongWaitAtSignal`) | `domains/railroad/signal-hooks.md`, `domains/railroad/scheduler.md`, `domains/railroad/signals.md` |
+| A signal shows stop or an error where the placement looks right (`RBV_NoExitSignals`) | `domains/railroad/signal-placement.md` |
+| A train stops short of the end of a route of your own | `domains/railroad/own-routes.md`, `domains/railroad/route-autopilot.md` |
+| The autopilot picks a wrong route or finds none | `domains/railroad/route-search.md`, `domains/railroad/route-autopilot.md` |
+| A train is too slow, brakes too early or must be limited from code | `domains/railroad/autopilot-speed-atc.md` |
+| Belts or pipes stop at a platform | `domains/railroad/timetable-docking.md` |
+| Which events and data are available for trains, stations, platforms, signal aspects | `domains/railroad/data-events.md` |
+| Two-way single track, push-pull | `domains/railroad/push-pull-lines.md` |
+| A test needs a railway layout | `domains/railroad/layouts-from-code.md`, `domains/railroad/test-layouts.md` |
+| Station, signal or locomotive window | `domains/railroad/ui-windows.md` |
+
+| Open when the mod deals with | File |
 |---|---|
 | Where to get data (subsystem, stations, trains, platforms, cargo), events available without hooks | `domains/railroad/data-events.md` |
 | Timetables, docking rules in practice | `domains/railroad/timetable-docking.md` |
@@ -22,7 +38,8 @@ Most of this domain was first read from game headers (changelist 491125, later c
 | Push-pull trains, two-way single-track lines | `domains/railroad/push-pull-lines.md` |
 | The game's railway windows (station, signal, locomotive), adding a tab to the station window | `domains/railroad/ui-windows.md` |
 | Inserting a railway layout from code without the build gun (tracks, switches, stations, signals, vehicles) | `domains/railroad/layouts-from-code.md` |
-| Test layouts: popular track layouts to check, the standard for build lists and schematics (template: `domains/railroad/schematic-template.svg`) | `domains/railroad/test-layouts.md` |
+| Test layouts: popular track layouts to check, build lists and schematics (template: `domains/railroad/schematic-template.svg`) | `domains/railroad/test-layouts.md` |
+| Railway facts about game classes: buildable delegates and a track cache, listing tracks, the track hologram, dismantling a station, a client's railroad subsystem, train warnings and icons | `domains/railroad/game-class-notes.md` |
 | Pitfalls | below |
 
 New findings of this domain go to `learned/railroad.md`.

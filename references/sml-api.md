@@ -2,6 +2,8 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
+Contents: SML: modules and lifecycle; Root module setup; SML: hooks; Hook handlers; Hook limits and traps; Delegates and verified hook targets; Blueprint and widget hooks
+
 ## SML: modules and lifecycle
 
 **Module types**
@@ -29,6 +31,8 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - `INITIALIZATION`: content registration, reading the config.
 - `POST_INITIALIZATION`: things that depend on other mods, installing hooks.
 
+## Root module setup
+
 **Arrays filled in the root Blueprint**
 - Instance module: `ModConfigurations`, `BlueprintHooks`, `ClientBlueprintHooks`, `WidgetBlueprintHooks`, `GlobalItemTooltipProviders`, `GameMaps`, `SessionSettings`, `RemoteCallObjects`. On a dedicated server the "Client" ones are skipped **[source]** (`GameInstanceModule.cpp:56`, `!IsRunningDedicatedServer()`; docs.ficsit.app says the same). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Warning: docs.ficsit.app lists key-bind arrays (`RegisterModKeyBind`, `RegisterModAxisBind`) and a Subsystem Holder registry for the instance module. In SML 3.12 they do not exist: `GameInstanceModule.h:25-80` has no such arrays, `RegisterModKeyBind` appears nowhere in SML, `UModSubsystemHolder` is only forward-declared. `ModSubsystems` is on the world module, as below. A mod extends the game's input through `UFGChildInputMappingContext` (a primary data asset with `mParentContext`, game header `Input/FGChildInputMappingContext.h`). **[source]** (header read only). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
@@ -40,7 +44,9 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - Exactly one root of each type per mod, otherwise Fatal.
 - Do not set `bRootModule` in the C++ class. The Blueprint child would inherit it and you would get two roots.
 - The order of mods within a phase is undefined.
-- **A root module can also be pure C++.** `FPluginModuleLoader::FindRootModulesOfType` joins the native classes (`FindNativeClassesByType`) with the Blueprint assets tagged `bRootModule` (`FindBlueprintAssetsByTag`), skips Abstract, newer-version and deprecated classes, and keeps those whose class default object has `bRootModule` (`ModLoading/PluginModuleLoader.cpp:36-60`). The owning plugin of a `/Script/<Module>.<Class>` path comes from the module name (`BlueprintAssetHelperLibrary.cpp:121-135`). So a non-abstract C++ class that sets `bRootModule = true` in its constructor is a root. Tested for the instance and the world module: non-abstract `UGameInstanceModule` and `UGameWorldModule` subclasses with `bRootModule = true` in their constructors and no Blueprint child were found and got every lifecycle phase, with no two-roots Fatal (`instance module CONSTRUCTION (pure C++ root, bRootModule=1)`, `... INITIALIZATION ...`, `... POST_INITIALIZATION ...`, `world module CONSTRUCTION in Persistent_Level`, and so on). Such a root fills the module arrays itself: configs added in the constructor, and a session setting asset and an Actor Mixin class loaded with `LoadObject`/`LoadClass` at `CONSTRUCTION` before `Super` were registered (`assets: session settings 1, blueprint hooks 1`, `Registering configuration /Script/<Module>.<Config>`). The recommended pattern (a C++ class without the flag plus a Blueprint child with the flag) stays right for a different reason: a flagged non-abstract C++ class **and** a flagged Blueprint child are two roots, which is Fatal (`GameInstanceModuleManager.cpp:51-55`, `WorldModuleManager.cpp:80`). Blueprint roots work: in the game the instance module logged `CONSTRUCTION`, `INITIALIZATION` and `POST_INITIALIZATION`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+- **A root module can also be pure C++.** `FPluginModuleLoader::FindRootModulesOfType` joins the native classes (`FindNativeClassesByType`) with the Blueprint assets tagged `bRootModule` (`FindBlueprintAssetsByTag`), skips Abstract, newer-version and deprecated classes, and keeps those whose class default object has `bRootModule` (`ModLoading/PluginModuleLoader.cpp:36-60`). The owning plugin of a `/Script/<Module>.<Class>` path comes from the module name (`BlueprintAssetHelperLibrary.cpp:121-135`).
+  - So a non-abstract C++ class that sets `bRootModule = true` in its constructor is a root. Tested for the instance and the world module: non-abstract `UGameInstanceModule` and `UGameWorldModule` subclasses with `bRootModule = true` in their constructors and no Blueprint child were found and got every lifecycle phase, with no two-roots Fatal (`instance module CONSTRUCTION (pure C++ root, bRootModule=1)`, `... INITIALIZATION ...`, `... POST_INITIALIZATION ...`, `world module CONSTRUCTION in Persistent_Level`, and so on). Such a root fills the module arrays itself: configs added in the constructor, and a session setting asset and an Actor Mixin class loaded with `LoadObject`/`LoadClass` at `CONSTRUCTION` before `Super` were registered (`assets: session settings 1, blueprint hooks 1`, `Registering configuration /Script/<Module>.<Config>`).
+  - The recommended pattern (a C++ class without the flag plus a Blueprint child with the flag) stays right for a different reason: a flagged non-abstract C++ class **and** a flagged Blueprint child are two roots, which is Fatal (`GameInstanceModuleManager.cpp:51-55`, `WorldModuleManager.cpp:80`). Blueprint roots work: in the game the instance module logged `CONSTRUCTION`, `INITIALIZATION` and `POST_INITIALIZATION`. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - **A validation error on the first save of a module Blueprint is normal.** Saving before ticking **Root Module** gives this in the editor log: `AssetCheck: Error: [AssetLog] …Root….uasset: At least one module of this type was found in this mod, but none were marked as root. Fix by marking at least one as root.` After ticking the flag and saving again, validation passes without an error. The flag is in **Class Defaults**, in the **Details** panel, named **Root Module**.
 
 **Finding other mods' modules**
@@ -80,6 +86,8 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - Variants: `*_AFTER`, `*_EXPLICIT(Signature, ...)` for overloaded functions, `UNSUBSCRIBE_METHOD` and `UNSUBSCRIBE_UOBJECT_METHOD`.
   - Warning: docs.ficsit.app names `SUBSCRIBE_METHOD_MANUAL` for overloads. In SML 3.12 only the `_EXPLICIT` variants exist (`NativeHookManager.h:589-658`). **[source]** (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
+## Hook handlers
+
 **Handlers**
 - "Before": `void(TCallScope<Sig>& Scope, Class* Self, Args...)`. Static and free functions have no `Self`. For a `const` member function `Self` is `const Class*`, otherwise the handler does not compile **[source]** (`NativeHookManager.h:385`). (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
   - `Scope(Self, Args...)` calls the original.
@@ -96,6 +104,8 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - `Cancel()` skips every later "before" handler as well as the original; "after" handlers still run. Tested: two "before" subscriptions and one "after" on `AFGBuildableFactory::SetIsProductionPaused` (`SUBSCRIBE_METHOD_VIRTUAL`, the instance as sample), the first "before" calling `Cancel()`: the second never logged, the "after" did, the flag stayed unchanged (`B3 before#1 paused=1, Cancel`, `B3 after paused=1`, `B3 paused after the call=0`, no `before#2` line). **[source]** `Override(...)` does the same, and the chain goes on only while the call is forwarded (`bForwardCall`, `NativeHookManager.h:143-215`), so another mod's `Cancel` can silently hide your "before" hook. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 - Lambdas live until the end of the game. Capture `this` and values, never local variables by reference.
 
+## Hook limits and traps
+
 **Limits**
 - One hook per function address, shared by all mods. A failed hook installation is Fatal.
 - The method must be accessible. For private ones, use `Friend` from AccessTransformers.
@@ -103,12 +113,15 @@ Header: `#include "Patching/NativeHookManager.h"`. All macros return `FDelegateH
 - **[source]** The shipping DLL folds identical functions into one body (identical COMDAT folding): two functions with the same code share one address, and a hook on that address fires for both. The `.pdb` then names only one of them at that RVA. Seen for `AFGTrainScheduler::GetReservationNumber`, whose body is shared with another function. Evidence: `dumpbin /disasm` of the shipping DLL with its `.pdb` (`references/tools.md`). (2026-11-01, game 513885, SML 3.12.0)
 - Engine classes that are not exported cannot be inherited. You have to copy the whole class, e.g. `FCanvasBatchedElementRenderItem`.
 - Install hooks in `if (!WITH_EDITOR)`.
-- **A native hook can be subscribed during play, the first time it is needed, and unsubscribed again during play; after the last unsubscribe the function's first bytes are the game's own again.** This is a variant of "install hooks in `POST_INITIALIZATION`" for a hook that should cost nothing while its feature is off. `SUBSCRIBE_METHOD(AFGTrain::TickAtc, [](auto& Scope, AFGTrain* Self, float Dt) { Scope(Self, Dt); ... })`, called from a world subsystem's tick when the first train needed it, logged `Successfully hooked function AFGTrain::TickAtc` and its handler drove that train from the next frame on. `UNSUBSCRIBE_METHOD(AFGTrain::TickAtc, Handle)` with the handle `SUBSCRIBE_METHOD` returned, called from the same tick while the handler was driving a train at 43 km/h, removed it with no crash, and the train went on under the game's own control. Compared again after such an unsubscribe (back to the menu, a save loaded in the same process), the function's first 16 bytes (`GetProcAddress` on the game module) equalled the bytes read from the binary before any subscribe, and a second subscribe in the same process logged `Successfully hooked` again (2 such lines in one run). So a check of the first bytes before `SUBSCRIBE_METHOD` (`domains/railroad/signal-hooks.md`) also works for a re-subscribe once every handler of the function is gone. Evidence: 13 test runs with 0 crashes, among them a subscribe at the first use and an unsubscribe 10 s into it, and two save-and-load runs with `first bytes as read; hook ... installed` after the load. (2026-11-03, game 513885, SML 3.12.0)
+- **A native hook can be subscribed during play, the first time it is needed, and unsubscribed again during play; after the last unsubscribe the function's first bytes are the game's own again.** This is a variant of "install hooks in `POST_INITIALIZATION`" for a hook that should cost nothing while its feature is off. `SUBSCRIBE_METHOD(AFGTrain::TickAtc, [](auto& Scope, AFGTrain* Self, float Dt) { Scope(Self, Dt); ... })`, called from a world subsystem's tick when the first train needed it, logged `Successfully hooked function AFGTrain::TickAtc` and its handler drove that train from the next frame on. `UNSUBSCRIBE_METHOD(AFGTrain::TickAtc, Handle)` with the handle `SUBSCRIBE_METHOD` returned, called from the same tick while the handler was driving a train at 43 km/h, removed it with no crash, and the train went on under the game's own control.
+  - Compared again after such an unsubscribe (back to the menu, a save loaded in the same process), the function's first 16 bytes (`GetProcAddress` on the game module) equalled the bytes read from the binary before any subscribe, and a second subscribe in the same process logged `Successfully hooked` again (2 such lines in one run). So a check of the first bytes before `SUBSCRIBE_METHOD` (`domains/railroad/signal-hooks.md`) also works for a re-subscribe once every handler of the function is gone. Evidence: 13 test runs with 0 crashes, among them a subscribe at the first use and an unsubscribe 10 s into it, and two save-and-load runs with `first bytes as read; hook ... installed` after the load. (2026-11-03, game 513885, SML 3.12.0)
 
 **⚠ Biggest trap: a hook fires for every instance in every world**
 - The first line of the handler filters to *your* object, and in all other cases passes the call through `Scope(...)`.
 - Real example: a global hook on `FCanvas::GetBatchedElements` replaced the draw batches of *all* canvases in the game. After a few save loads the game used 16 GB of VRAM.
 - Null out pointers to your own objects that you compare against in the hook after use.
+
+## Delegates and verified hook targets
 
 **If the game has a delegate, use it instead of a hook**
 - `AFGPlayerController::PlayerControllerBegunPlay` (static) and `ChatMessageEntered`
@@ -150,6 +163,8 @@ SUBSCRIBE_METHOD(FCanvas::GetBatchedElements, [](auto& Scope, FCanvas* Self, /* 
     // ...your logic, result via Scope.Override(...)
 });
 ```
+
+## Blueprint and widget hooks
 
 **Blueprint hooks**
 - "Blueprint Hook (SML)" and "Blueprint Mixin (SML)" assets.

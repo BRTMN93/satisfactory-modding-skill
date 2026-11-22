@@ -43,7 +43,7 @@ This file holds the rules and procedures needed in almost every modding task. Re
 | Lessons from mistakes, UE5Coro coroutines, compiler errors | `references/patterns-and-pitfalls.md`, `references/coroutines-compiler.md` |
 | UI injection into game windows, widget hooks from C++, popups, searchable lists; key binds and texts of a mod | `references/ui.md`, `references/ui-keybinds-texts.md` |
 | Client, dedicated server, RPC, version compatibility | `references/multiplayer.md` |
-| Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-environment.md`, `references/testing-launch.md` |
+| Tests, launching the game into a save, test mode, release checklist; launch arguments (`-Multiprocess`, `-ExecCmds`, `-RenderOffScreen`) | `references/testing.md`, `references/testing-environment.md` |
 | Automated test runs: watchers (`scripts/watch-run.sh`), series, queues, sub-agents | `references/test-automation.md`, `references/test-queues.md` |
 | Working conventions for a series of tests: announcing, results file for long series, run register (no duplicate runs), backlog, review, models per job | `references/test-discipline.md` |
 | ficsit.app, licences, pull requests to other people's mods | `references/publishing.md` |

@@ -2,6 +2,8 @@
 
 Part of the `satisfactory-modding` skill. Markers: no marker = verified in practice, **[source]** = read from SML or game code, not tested, **[?]** = uncertain. Replace the parts in `<...>` with your own.
 
+Contents: Project and mod structure; Where mods live and game features; The .uplugin file; Build.cs, modules and libraries; AccessTransformers and config files
+
 ## Project and mod structure
 
 **Plugins in the starter project** (the `Mods/` directory):
@@ -12,6 +14,8 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - `AccessTransformers`: access to private members of the game.
 - `WwisePatches`: Wwise patches, applied automatically at build (`references/setup.md`, "Project location first, then the Wwise integration").
 - `GameFeatures/ExampleMod`: example mod.
+
+## Where mods live and game features
 
 **Where mods live:** `Mods/<Mod>` or `Mods/GameFeatures/<Mod>`.
 - Alpakit creates game feature mods in `GameFeatures`, and a game feature mod has to stay there: packaging chooses the output folder from where the plugin lies (`PackagePlugin.cs:231-247`), and the game takes it as a game feature only from `Mods\GameFeatures`.
@@ -27,6 +31,8 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 - An asset of such a type in any other folder is silently ignored: a message never plays, a setting, RCO or child input context is not found, with no log error. Tested for `FGUserSetting` (the other types are **[source]**): two assets cooked into the mod's pak, the one in the rule's folder is a registered primary asset and the game's user settings find it, the one in another folder exists as a package but is neither registered nor found (`<A> package exists=1`, `<B> package exists=1`, `primary FGUserSetting with <Mod>: [FGUserSetting:<A>]; game settings find A=1 B=0`; `UFGGameUserSettings::FindUserSetting`, what the options menu reads; the menu itself was not looked at). A mod not made by the wizard needs the rules added by hand in the GameFeatureData asset; the simplest source is a fresh "Blueprint Only" Alpakit template.
 - The base game scans 12 types (starter project `Config/DefaultGame.ini:140-154`): FGSchematic, FGResearchRecipe, FGResearchTree, FGUserSetting, FGMessage, FGIconLibrary, FGRemoteCallObject, FGGamePhase, FGOnboardingStep, FGResourceNodeData, FGChildInputMappingContext, FGNoise. docs.ficsit.app lists 7. The example mod's GameFeatureData scans FGUserSetting, FGMessage, FGIconLibrary and FGChildInputMappingContext.
 - A mod module that registers the content in code is the alternative when content is conditional or only some assets should load. The GameFeatureData action "Add Components" was reported broken as of game 1.2 **[?]**; "Add World Partition Content (Content Bundle)" is not used by mods **[?]**. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
+
+## The .uplugin file
 
 **`.uplugin`: fields that SML reads** (`ModLoadingLibrary.cpp:24-100`):
 - `SemVersion`: the mod version. On release, bump it together with `VersionName`.
@@ -52,6 +58,8 @@ Part of the `satisfactory-modding` skill. Markers: no marker = verified in pract
 ```
 docs.ficsit.app (ReleaseMod) shows an example `.uplugin` with SML `^3.9.0`, `GameVersion >=365306` and module `LoadingPhase: PostDefault`; in SML 3.12 / game 513885 use SML `^3.12.0`, a `GameVersion` from `currentVersion.txt`, and `Default`, which is what Alpakit writes (`AlpakitEditModDialog.cpp:319`, `ModWizardDefinition.cpp:103`); only SML itself loads in `PostDefault`.
 
+## Build.cs, modules and libraries
+
 **`Build.cs`**
 - Start from `Mods/Alpakit/Templates/CPPAndBlueprintBlank/Source/PLUGIN_NAME/PLUGIN_NAME.Build.cs`.
 - Set `CppStandard = CppStandardVersion.Cpp20` and `PCHUsage = UseExplicitOrSharedPCHs`.
@@ -75,6 +83,8 @@ docs.ficsit.app (ReleaseMod) shows an example `.uplugin` with SML `^3.9.0`, `Gam
 - **[?]** A library that produces many warnings needs `AllowWindowsPlatformTypes.h`, `THIRD_PARTY_INCLUDES_START/END` and `push_macro("check")` with `#undef check` around its headers. Two mods with a third-party module of the same name clash in one project; put the library in a dependency mod. (2026-10-24, game 513885, SML 3.12.0, docs.ficsit.app)
 
 **Calling another mod's `UFUNCTION`s without linking it:** `FindFirstObject<UClass>(TEXT("<ClassName>"))` or a `TObjectIterator<UClass>` by name finds the class once its module is loaded, an instance comes from `TObjectIterator<AActor>` (world actors) or the player's RCO list, `Object->FindFunction(FName)` gives the `UFunction`, a parameter block is built with `FMemory::Malloc(Function->ParmsSize)` plus `InitializeStruct`, each `FProperty` of the function (`TFieldIterator<FProperty>` with `CPF_Parm`) is filled with `ImportText_Direct` from a string (`FGuid` and `FString` import from their text forms), `Object->ProcessEvent(Function, Parms)` runs it and `CPF_ReturnParm`/`CPF_OutParm` properties are read back with `ExportText_InContainer`. With `nullptr` as the `Delta` object of `ExportText*` every field is written; with any other object, fields equal to the default are left out of the text. The same `ExportText_InContainer` on every `UPROPERTY` of the other mod's objects dumps their state (that is how a protocol version and an id format were read). Server RPCs (`Server_*`) run this way on a listen host like a direct call. A local variable named like the class (for example `Foo` for `UFoo`) shadowing a member is `C4458`, a compile error. (2026-11-06, game 517554, SML 3.12.0)
+
+## AccessTransformers and config files
 
 **AccessTransformers** (`Config/AccessTransformers.ini`, section `[AccessTransformers]`) give access to private and protected members of the game:
 - `Friend=(Class="AFoo", FriendClass="UBar")`
